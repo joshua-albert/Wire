@@ -86,8 +86,8 @@ def translate_headlines(items: list[dict], state: dict, enabled: bool) -> int:
         return 0
 
     cache = state.setdefault("translations", {})
-    deepl_key = os.environ.get("DEEPL_API_KEY")
-    libre_url = os.environ.get("LIBRETRANSLATE_URL")
+    deepl_key = (os.environ.get("DEEPL_API_KEY") or "").strip()
+    libre_url = (os.environ.get("LIBRETRANSLATE_URL") or "").strip()
 
     pending = [i for i in items if i.get("lang", "en") != "en"]
     translated = 0

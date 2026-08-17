@@ -35,17 +35,35 @@ def _row(thread: dict, site_url: str) -> tuple[str, str]:
     return text, markup
 
 
-def send(threads: list[dict], cfg: dict, site_url: str, kicker: str) -> bool:
-    host = os.environ.get("SMTP_HOST")
-    user = os.environ.get("SMTP_USER")
-    password = os.environ.get("SMTP_PASS")
-    to_addr = os.environ.get("MAIL_TO")
-    from_addr = os.environ.get("MAIL_FROM", user)
-    port = int(os.environ.get("SMTP_PORT", "465"))
+def setting(name: str, fallback: str = "") -> str:
+    """
+    Read an environment variable, treating blank as unset.
 
+    CI systems pass secrets you haven't configured as empty strings rather
+    than leaving them out, so .get(name, default) quietly returns "" and the
+    default never applies.
+    """
+    return (os.environ.get(name) or "").strip() or fallback
+
+
+def send(threads: list[dict], cfg: dict, site_url: str, kicker: str) -> bool:
+    host = setting("SMTP_HOST")
+    user = setting("SMTP_USER")
+    password = setting("SMTP_PASS")
+    to_addr = setting("MAIL_TO")
+
+    # Checked before anything is parsed. Nothing about an unconfigured
+    # optional feature should be able to fail.
     if not all([host, user, password, to_addr]):
-        print("email: SMTP env vars not set — skipping send")
+        print("email: not configured — skipping send")
         return False
+
+    from_addr = setting("MAIL_FROM", user)
+    try:
+        port = int(setting("SMTP_PORT", "465"))
+    except ValueError:
+        print("email: SMTP_PORT is not a number — using 465")
+        port = 465
 
     picked = sorted(threads, key=lambda t: t["_score"],
                     reverse=True)[: cfg["email"]["max_items_per_email"]]

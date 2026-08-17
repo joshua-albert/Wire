@@ -94,7 +94,7 @@ def main() -> int:
             live.sort(key=lambda t: t["_score"], reverse=True)
 
     # --- 6. publish
-    site_url = os.environ.get("SITE_URL", "")
+    site_url = (os.environ.get("SITE_URL") or "").strip()
     render.write_all(live, cfg, errors, feeds, state, site_url)
     flagged = sum(1 for t in live if t.get("_flag"))
     unusual = len(beats.anomalies(state))
@@ -107,7 +107,12 @@ def main() -> int:
     seen_ids = {id(t) for t in fresh}
     fresh += [t for t in live if t.get("_flag") and t.get("email_level", 0) >= 1
               and id(t) not in seen_ids]
-    mailer.decide_and_send(fresh, cfg, state, site_url or "your site")
+    # Email is a convenience. The site is the product. A failure here must
+    # never stop the front page from being published.
+    try:
+        mailer.decide_and_send(fresh, cfg, state, site_url or "your site")
+    except Exception as exc:  # noqa: BLE001
+        print(f"email: skipped after an error — {type(exc).__name__}: {exc}")
 
     # --- 8. housekeeping
     keep_days = int(site.get("thread_retention_days", 5))
