@@ -1,0 +1,368 @@
+# THE WIRE — source list
+#
+# tier 1 = wires, primary documents, official alert feeds (highest trust)
+# tier 2 = major established newsrooms
+# tier 3 = regional / specialist / investigative outlets
+# tier 4 = aggregator queries (Google News) — good for long-tail, noisier
+#
+# tags: philly, uspol, world, war, env, justice, money, sci, alert
+#
+# Feeds go stale. Run `python check_feeds.py` any time to test every URL
+# and get a list of what's dead so you can prune or replace it.
+
+feeds:
+
+  # ---------- WIRES & GLOBAL ----------
+  - {name: "BBC World",            url: "https://feeds.bbci.co.uk/news/world/rss.xml", tier: 1, tags: [world]}
+  - {name: "BBC US & Canada",      url: "https://feeds.bbci.co.uk/news/world/us_and_canada/rss.xml", tier: 1, tags: [world, uspol]}
+  - {name: "AP Top News",          url: "https://feedx.net/rss/ap.xml", tier: 1, tags: [world, uspol]}
+  # DEAD - {name: "Reuters World",        url: "https://feeds.reuters.com/Reuters/worldNews", tier: 1, tags: [world]}
+  - {name: "Al Jazeera",           url: "https://www.aljazeera.com/xml/rss/all.xml", tier: 2, tags: [world, war]}
+  - {name: "France 24",            url: "https://www.france24.com/en/rss", tier: 2, tags: [world]}
+  - {name: "Deutsche Welle",       url: "https://rss.dw.com/rdf/rss-en-world", tier: 2, tags: [world]}
+  - {name: "Guardian World",       url: "https://www.theguardian.com/world/rss", tier: 2, tags: [world]}
+  - {name: "NPR World",            url: "https://feeds.npr.org/1004/rss.xml", tier: 2, tags: [world]}
+  - {name: "Sky News World",       url: "https://feeds.skynews.com/feeds/rss/world.xml", tier: 2, tags: [world]}
+  # DEAD - {name: "CBC World",            url: "https://www.cbc.ca/webfeed/rss/rss-world", tier: 2, tags: [world]}
+  - {name: "Euronews",             url: "https://www.euronews.com/rss?level=theme&name=news", tier: 3, tags: [world]}
+  - {name: "UN News",              url: "https://news.un.org/feed/subscribe/en/news/all/rss.xml", tier: 1, tags: [world]}
+  - {name: "NYT World",            url: "https://rss.nytimes.com/services/xml/rss/nyt/World.xml", tier: 2, tags: [world]}
+  - {name: "NYT Home",             url: "https://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml", tier: 2, tags: [world, uspol]}
+  - {name: "WaPo World",           url: "https://feeds.washingtonpost.com/rss/world", tier: 2, tags: [world]}
+  - {name: "CNN Top",              url: "http://rss.cnn.com/rss/cnn_topstories.rss", tier: 2, tags: [world, uspol]}
+  - {name: "Semafor",              url: "https://www.semafor.com/rss.xml", tier: 3, tags: [world, money]}
+
+  # ---------- WAR, CONFLICT, SECURITY ----------
+  # DEAD - {name: "Kyiv Independent",     url: "https://kyivindependent.com/feed/", tier: 2, tags: [war, world]}
+  - {name: "Meduza (EN)",          url: "https://meduza.io/rss/en/all", tier: 3, tags: [war, world]}
+  - {name: "Times of Israel",      url: "https://www.timesofisrael.com/feed/", tier: 2, tags: [war, world]}
+  # DEAD - {name: "Haaretz",              url: "https://www.haaretz.com/srv/haaretz-latest.xml", tier: 2, tags: [war, world]}
+  # DEAD - {name: "Arab News",            url: "https://www.arabnews.com/rss.xml", tier: 3, tags: [war, world]}
+  - {name: "Long War Journal",     url: "https://www.longwarjournal.org/feed", tier: 3, tags: [war]}
+  - {name: "War on the Rocks",     url: "https://warontherocks.com/feed/", tier: 3, tags: [war]}
+  - {name: "Defense News",         url: "https://www.defensenews.com/arc/outboundfeeds/rss/?outputType=xml", tier: 3, tags: [war]}
+  - {name: "Naval News",           url: "https://www.navalnews.com/feed/", tier: 3, tags: [war]}
+  - {name: "Bellingcat",           url: "https://www.bellingcat.com/feed/", tier: 3, tags: [war, justice]}
+  - {name: "Crisis Group",         url: "https://www.crisisgroup.org/rss.xml", tier: 3, tags: [war, world]}
+  # DEAD - {name: "ACLED",                url: "https://acleddata.com/feed/", tier: 1, tags: [war]}
+  # DEAD - {name: "Institute for the Study of War", url: "https://www.understandingwar.org/feeds/all.xml", tier: 3, tags: [war]}
+  - {name: "US Dept of Defense",   url: "https://www.defense.gov/DesktopModules/ArticleCS/RSS.ashx?ContentType=1&Site=945&max=20", tier: 1, tags: [war, uspol]}
+  # DEAD - {name: "US State Dept",        url: "https://www.state.gov/rss-feed/press-releases/feed/", tier: 1, tags: [world, uspol]}
+
+  # ---------- THE LONG TAIL: REGIONS UNDER-COVERED IN US MEDIA ----------
+  - {name: "The Diplomat (Asia)",  url: "https://thediplomat.com/feed/", tier: 3, tags: [world]}
+  - {name: "South China Morning Post", url: "https://www.scmp.com/rss/91/feed", tier: 3, tags: [world]}
+  - {name: "Japan Times",          url: "https://www.japantimes.co.jp/feed/", tier: 3, tags: [world]}
+  - {name: "Straits Times Asia",   url: "https://www.straitstimes.com/news/asia/rss.xml", tier: 3, tags: [world]}
+  - {name: "Rappler (Philippines)",url: "https://www.rappler.com/feed/", tier: 3, tags: [world]}
+  # DEAD - {name: "The Wire (India)",     url: "https://thewire.in/rss", tier: 3, tags: [world]}
+  - {name: "Dawn (Pakistan)",      url: "https://www.dawn.com/feeds/home", tier: 3, tags: [world]}
+  - {name: "Kathmandu Post",       url: "https://kathmandupost.com/rss", tier: 3, tags: [world]}
+  - {name: "Premium Times (Nigeria)", url: "https://www.premiumtimesng.com/feed", tier: 3, tags: [world]}
+  - {name: "Daily Maverick (S. Africa)", url: "https://www.dailymaverick.co.za/dmrss/", tier: 3, tags: [world]}
+  # DEAD - {name: "Mail & Guardian",      url: "https://mg.co.za/feed/", tier: 3, tags: [world]}
+  # DEAD - {name: "The EastAfrican",      url: "https://www.theeastafrican.co.ke/latest/rss", tier: 3, tags: [world]}
+  - {name: "AllAfrica",            url: "https://allafrica.com/tools/headlines/rdf/latest/headlines.rdf", tier: 3, tags: [world]}
+  - {name: "Africanews",           url: "https://www.africanews.com/feed/rss", tier: 3, tags: [world]}
+  # DEAD - {name: "ISS Africa",           url: "https://issafrica.org/rss/todays-news", tier: 3, tags: [world, war]}
+  - {name: "Mada Masr (Egypt)",    url: "https://www.madamasr.com/en/feed/", tier: 3, tags: [world]}
+  - {name: "Balkan Insight",       url: "https://balkaninsight.com/feed/", tier: 3, tags: [world]}
+  # DEAD - {name: "Eurasianet",           url: "https://eurasianet.org/rss.xml", tier: 3, tags: [world]}
+  - {name: "OC Media (Caucasus)",  url: "https://oc-media.org/feed/", tier: 3, tags: [world]}
+  - {name: "MercoPress (S. America)", url: "https://en.mercopress.com/rss/", tier: 3, tags: [world]}
+  - {name: "Buenos Aires Times",   url: "https://www.batimes.com.ar/feed", tier: 3, tags: [world]}
+  - {name: "Rest of World",        url: "https://restofworld.org/feed/latest/", tier: 3, tags: [world, sci]}
+  - {name: "Global Voices",        url: "https://globalvoices.org/feed/", tier: 3, tags: [world, justice]}
+  - {name: "OCCRP",                url: "https://www.occrp.org/en/feed", tier: 3, tags: [world, justice]}
+
+  # ---------- PHILADELPHIA ----------
+  - {name: "Philadelphia Inquirer",url: "https://www.inquirer.com/arc/outboundfeeds/rss/category/news/?outputType=xml", tier: 2, tags: [philly]}
+  - {name: "Billy Penn",           url: "https://billypenn.com/feed/", tier: 3, tags: [philly]}
+  - {name: "WHYY",                 url: "https://whyy.org/feed/", tier: 2, tags: [philly]}
+  # DEAD - {name: "PhillyVoice",          url: "https://www.phillyvoice.com/feeds/rss/", tier: 3, tags: [philly]}
+  - {name: "Philadelphia Magazine",url: "https://www.phillymag.com/feed/", tier: 3, tags: [philly]}
+  - {name: "The Philadelphia Citizen", url: "https://thephiladelphiacitizen.org/feed/", tier: 3, tags: [philly, justice]}
+  # DEAD - {name: "Philadelphia Business Journal", url: "https://www.bizjournals.com/philadelphia/news/rss.xml", tier: 3, tags: [philly, money]}
+  # DEAD - {name: "Metro Philadelphia",   url: "https://metrophiladelphia.com/feed/", tier: 3, tags: [philly]}
+  - {name: "PA Capital-Star",      url: "https://penncapital-star.com/feed/", tier: 3, tags: [philly, uspol]}
+  # DEAD - {name: "Spotlight PA",         url: "https://www.spotlightpa.org/feeds/rss.xml", tier: 2, tags: [philly, justice]}
+  # DEAD - {name: "NWS Philadelphia Alerts", url: "https://alerts.weather.gov/cap/wwaatmget.php?x=PAC101&y=0", tier: 1, tags: [philly, alert, env]}
+
+  # ---------- US POLITICS & GOVERNMENT ----------
+  - {name: "The Hill",             url: "https://thehill.com/news/feed/", tier: 2, tags: [uspol]}
+  - {name: "Politico",             url: "https://rss.politico.com/politics-news.xml", tier: 2, tags: [uspol]}
+  - {name: "Axios",                url: "https://api.axios.com/feed/", tier: 2, tags: [uspol, money]}
+  # DEAD - {name: "NOTUS",                url: "https://www.notus.org/rss.xml", tier: 3, tags: [uspol]}
+  - {name: "Roll Call",            url: "https://rollcall.com/feed/", tier: 3, tags: [uspol]}
+  - {name: "SCOTUSblog",           url: "https://www.scotusblog.com/feed/", tier: 1, tags: [uspol, justice]}
+  - {name: "Courthouse News",      url: "https://www.courthousenews.com/feed/", tier: 3, tags: [justice, uspol]}
+  - {name: "Federal Register — Presidential Docs", url: "https://www.federalregister.gov/api/v1/documents.rss?conditions%5Btype%5D%5B%5D=PRESDOCU", tier: 1, tags: [uspol]}
+  - {name: "GAO Reports",          url: "https://www.gao.gov/rss/reports.xml", tier: 1, tags: [uspol]}
+  - {name: "DOJ Press",            url: "https://www.justice.gov/news/rss?type=press_release", tier: 1, tags: [justice, uspol]}
+
+  # ---------- JUSTICE, POLICING, CIVIL RIGHTS ----------
+  - {name: "ProPublica",           url: "https://www.propublica.org/feeds/propublica/main", tier: 2, tags: [justice, uspol]}
+  - {name: "The Marshall Project", url: "https://www.themarshallproject.org/rss/recent.rss", tier: 2, tags: [justice]}
+  - {name: "The Appeal",           url: "https://theappeal.org/feed/", tier: 3, tags: [justice]}
+  - {name: "Bolts",                url: "https://boltsmag.org/feed/", tier: 3, tags: [justice, uspol]}
+  - {name: "The 19th",             url: "https://19thnews.org/feed/", tier: 3, tags: [justice]}
+  - {name: "Prism",                url: "https://prismreports.org/feed/", tier: 3, tags: [justice]}
+  - {name: "Injustice Watch",      url: "https://www.injusticewatch.org/feed/", tier: 3, tags: [justice]}
+  - {name: "Human Rights Watch",   url: "https://www.hrw.org/rss/news", tier: 2, tags: [justice, world]}
+
+  # ---------- ENVIRONMENT, CLIMATE, DISASTER ----------
+  - {name: "Inside Climate News",  url: "https://insideclimatenews.org/feed/", tier: 2, tags: [env]}
+  - {name: "Grist",                url: "https://grist.org/feed/", tier: 3, tags: [env]}
+  - {name: "Mongabay",             url: "https://news.mongabay.com/feed/", tier: 3, tags: [env]}
+  - {name: "Carbon Brief",         url: "https://www.carbonbrief.org/feed/", tier: 3, tags: [env]}
+  - {name: "Yale Environment 360", url: "https://e360.yale.edu/feed.xml", tier: 3, tags: [env]}
+  # DEAD - {name: "DeSmog",               url: "https://www.desmog.com/feed/", tier: 3, tags: [env]}
+  - {name: "Guardian Environment", url: "https://www.theguardian.com/environment/rss", tier: 2, tags: [env]}
+  - {name: "USGS Quakes M4.5+",    url: "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/4.5_day.atom", tier: 1, tags: [alert, env]}
+  - {name: "GDACS Disaster Alerts",url: "https://www.gdacs.org/xml/rss.xml", tier: 1, tags: [alert, env]}
+  # DEAD - {name: "ReliefWeb",            url: "https://reliefweb.int/updates/rss.xml", tier: 1, tags: [alert, world]}
+  # DEAD - {name: "NOAA News",            url: "https://www.noaa.gov/rss/all-noaa-news.xml", tier: 1, tags: [env, sci]}
+
+  # ---------- HEALTH & OUTBREAK EARLY-WARNING ----------
+  # DEAD - {name: "ProMED-mail",          url: "https://promedmail.org/feed/", tier: 1, tags: [alert, sci]}
+  # DEAD - {name: "WHO Disease Outbreak News", url: "https://www.who.int/feeds/entity/csr/don/en/rss.xml", tier: 1, tags: [alert, sci]}
+  # DEAD - {name: "CDC Newsroom",         url: "https://tools.cdc.gov/api/v2/resources/media/404952.rss", tier: 1, tags: [alert, sci]}
+  - {name: "STAT News",            url: "https://www.statnews.com/feed/", tier: 3, tags: [sci]}
+
+  # ---------- MONEY & MARKETS ----------
+  - {name: "CNBC Top",             url: "https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=100003114", tier: 2, tags: [money]}
+  - {name: "MarketWatch Top",      url: "https://feeds.content.dowjones.io/public/rss/mw_topstories", tier: 2, tags: [money]}
+  - {name: "Financial Times",      url: "https://www.ft.com/rss/home", tier: 2, tags: [money, world]}
+  # DEAD - {name: "Reuters Business",     url: "https://feeds.reuters.com/reuters/businessNews", tier: 1, tags: [money]}
+  - {name: "Federal Reserve Press",url: "https://www.federalreserve.gov/feeds/press_all.xml", tier: 1, tags: [money, uspol]}
+  # DEAD - {name: "US Treasury Press",    url: "https://home.treasury.gov/rss/press.xml", tier: 1, tags: [money, uspol]}
+  # DEAD - {name: "SEC Litigation",       url: "https://www.sec.gov/rss/litigation/litreleases.xml", tier: 1, tags: [money, justice]}
+  - {name: "Calculated Risk",      url: "https://feeds.feedburner.com/CalculatedRisk", tier: 3, tags: [money]}
+  - {name: "Zeteo / Intercept",    url: "https://theintercept.com/feed/?rss", tier: 3, tags: [justice, uspol]}
+
+  # ---------- SCIENCE & TECH ----------
+  - {name: "Ars Technica",         url: "https://feeds.arstechnica.com/arstechnica/index", tier: 3, tags: [sci]}
+  - {name: "Nature News",          url: "https://www.nature.com/nature.rss", tier: 2, tags: [sci]}
+  - {name: "Science News",         url: "https://www.sciencenews.org/feed", tier: 3, tags: [sci]}
+
+  # ---------- LONG-TAIL QUERY FEEDS (Google News) ----------
+  # These are how small stories in small places surface before anyone aggregates them.
+  - {name: "GNews: Philadelphia",  url: "https://news.google.com/rss/search?q=Philadelphia+when:1d&hl=en-US&gl=US&ceid=US:en", tier: 4, tags: [philly]}
+  - {name: "GNews: Philly police", url: "https://news.google.com/rss/search?q=%22Philadelphia+police%22+when:2d&hl=en-US&gl=US&ceid=US:en", tier: 4, tags: [philly, justice]}
+  - {name: "GNews: SEPTA",         url: "https://news.google.com/rss/search?q=SEPTA+when:2d&hl=en-US&gl=US&ceid=US:en", tier: 4, tags: [philly]}
+  - {name: "GNews: officer charged", url: "https://news.google.com/rss/search?q=%22officer+charged%22+OR+%22officer+arrested%22+when:2d&hl=en-US&gl=US&ceid=US:en", tier: 4, tags: [justice]}
+  - {name: "GNews: coup / emergency", url: "https://news.google.com/rss/search?q=%22coup+attempt%22+OR+%22state+of+emergency%22+when:1d&hl=en-US&gl=US&ceid=US:en", tier: 4, tags: [world, war]}
+  - {name: "GNews: cross-border",  url: "https://news.google.com/rss/search?q=%22cross-border%22+OR+%22border+clash%22+OR+%22airstrike%22+when:1d&hl=en-US&gl=US&ceid=US:en", tier: 4, tags: [war]}
+  - {name: "GNews: protests",      url: "https://news.google.com/rss/search?q=protests+OR+%22general+strike%22+when:1d&hl=en-US&gl=US&ceid=US:en", tier: 4, tags: [world, justice]}
+  - {name: "GNews: central bank",  url: "https://news.google.com/rss/search?q=%22central+bank%22+OR+%22currency+collapse%22+OR+%22emergency+meeting%22+when:1d&hl=en-US&gl=US&ceid=US:en", tier: 4, tags: [money]}
+  - {name: "GNews: outbreak",      url: "https://news.google.com/rss/search?q=outbreak+OR+quarantine+when:1d&hl=en-US&gl=US&ceid=US:en", tier: 4, tags: [alert, sci]}
+  - {name: "GNews: evacuation",    url: "https://news.google.com/rss/search?q=evacuation+OR+%22dam+collapse%22+OR+%22mine+collapse%22+when:1d&hl=en-US&gl=US&ceid=US:en", tier: 4, tags: [alert, env]}
+
+  # ---------- NON-ENGLISH LOCAL PRESS ----------
+  # The actual long tail. These outlets file things days before an
+  # English-language desk notices. Headlines get machine-translated;
+  # the original is kept on the thread page.
+  - {name: "Ukrainska Pravda",     url: "https://www.pravda.com.ua/rss/", tier: 2, lang: uk, tags: [war, world]}
+  - {name: "Suspilne (UA)",        url: "https://suspilne.media/rss/all.rss", tier: 3, lang: uk, tags: [war, world]}
+  - {name: "Le Monde",             url: "https://www.lemonde.fr/rss/une.xml", tier: 2, lang: fr, tags: [world]}
+  - {name: "RFI Afrique",          url: "https://www.rfi.fr/fr/afrique/rss", tier: 3, lang: fr, tags: [world]}
+  - {name: "Jeune Afrique",        url: "https://www.jeuneafrique.com/feed/", tier: 3, lang: fr, tags: [world]}
+  - {name: "Der Spiegel",          url: "https://www.spiegel.de/schlagzeilen/index.rss", tier: 2, lang: de, tags: [world]}
+  - {name: "El País",              url: "https://feeds.elpais.com/mrss-s/pages/ep/site/elpais.com/portada", tier: 2, lang: es, tags: [world]}
+  - {name: "Clarín (Argentina)",   url: "https://www.clarin.com/rss/lo-ultimo/", tier: 3, lang: es, tags: [world]}
+  # DEAD - {name: "El Universal (Mexico)",url: "https://www.eluniversal.com.mx/rss.xml", tier: 3, lang: es, tags: [world]}
+  - {name: "Folha de S.Paulo",     url: "https://feeds.folha.uol.com.br/emcimadahora/rss091.xml", tier: 3, lang: pt, tags: [world]}
+  - {name: "Corriere della Sera",  url: "https://xml2.corriereobjects.it/rss/homepage.xml", tier: 3, lang: it, tags: [world]}
+  # DEAD - {name: "Kompas (Indonesia)",   url: "https://www.kompas.com/rss", tier: 3, lang: id, tags: [world]}
+  - {name: "Hürriyet (Turkey)",    url: "https://www.hurriyet.com.tr/rss/anasayfa", tier: 3, lang: tr, tags: [world]}
+  - {name: "Al-Araby",             url: "https://www.alaraby.co.uk/rss.xml", tier: 3, lang: ar, tags: [world, war]}
+  - {name: "Asharq Al-Awsat",      url: "https://aawsat.com/feed", tier: 3, lang: ar, tags: [world]}
+  - {name: "NHK News (Japan)",     url: "https://www.nhk.or.jp/rss/news/cat0.xml", tier: 2, lang: ja, tags: [world]}
+  - {name: "Yonhap (Korea)",       url: "https://www.yna.co.kr/rss/news.xml", tier: 2, lang: ko, tags: [world]}
+  - {name: "Dainik Bhaskar (India)", url: "https://www.bhaskar.com/rss-v1--category-1061.xml", tier: 3, lang: hi, tags: [world]}
+  - {name: "Prachatai (Thailand)", url: "https://prachatai.com/rss.xml", tier: 3, lang: th, tags: [world, justice]}
+  - {name: "VnExpress (Vietnam)",  url: "https://vnexpress.net/rss/tin-moi-nhat.rss", tier: 3, lang: vi, tags: [world]}
+  - {name: "Nieuwsblad (Belgium)", url: "https://www.nieuwsblad.be/rss/section/55178e67-15a8-4ddd-a3d8-bfe5708f8932", tier: 3, lang: nl, tags: [world]}
+  - {name: "Novaya Gazeta Europe", url: "https://novayagazeta.eu/feed/rss", tier: 3, lang: ru, tags: [world, justice]}
+
+  # ================= POLITICAL WRITING, ESSAYS, ARGUMENT =================
+  # Analysis and argument rather than breaking news. Deliberately spans the
+  # spectrum: reading only people you agree with is how you get surprised.
+  # access: free | metered (some articles/month) | paywall (subscribers only)
+
+  # --- left
+  - {name: "Jacobin", url: "https://jacobin.com/feed", tier: 3, tags: [argument, uspol], access: free}
+  - {name: "Dissent", url: "https://www.dissentmagazine.org/feed", tier: 3, tags: [argument], access: free}
+  - {name: "n+1", url: "https://www.nplusonemag.com/feed/", tier: 3, tags: [argument], access: metered}
+  - {name: "The Baffler", url: "https://thebaffler.com/feed", tier: 3, tags: [argument], access: free}
+  # DEAD - {name: "Current Affairs", url: "https://www.currentaffairs.org/feed", tier: 3, tags: [argument], access: metered}
+  - {name: "In These Times", url: "https://inthesetimes.com/rss", tier: 3, tags: [argument, justice], access: free}
+  # DEAD - {name: "The Nation", url: "https://www.thenation.com/feed/?rss_type=full", tier: 3, tags: [argument, uspol], access: metered}
+  - {name: "Mother Jones", url: "https://www.motherjones.com/feed/", tier: 3, tags: [argument, uspol], access: free}
+  # DEAD - {name: "The American Prospect", url: "https://prospect.org/api/rss/content.rss", tier: 3, tags: [argument, money], access: free}
+  # DEAD - {name: "Boston Review", url: "https://www.bostonreview.net/feed/", tier: 3, tags: [argument], access: free}
+  - {name: "New Left Review", url: "https://newleftreview.org/feed", tier: 3, tags: [argument], access: paywall}
+  - {name: "Jewish Currents", url: "https://jewishcurrents.org/feed", tier: 3, tags: [argument], access: metered}
+  - {name: "Africa Is a Country", url: "https://africasacountry.com/feed", tier: 3, tags: [argument, world], access: free}
+  # DEAD - {name: "Verso Blog", url: "https://www.versobooks.com/blogs.atom", tier: 3, tags: [argument], access: free}
+  - {name: "Labor Notes", url: "https://labornotes.org/feed", tier: 3, tags: [argument, justice], access: free}
+  - {name: "Monthly Review", url: "https://mronline.org/feed/", tier: 3, tags: [argument], access: free}
+  - {name: "openDemocracy", url: "https://www.opendemocracy.net/en/feed/", tier: 3, tags: [argument, world], access: free}
+  - {name: "Novara Media", url: "https://novaramedia.com/feed/", tier: 3, tags: [argument], access: free}
+  - {name: "Tribune (UK)", url: "https://tribunemag.co.uk/feed", tier: 3, tags: [argument], access: free}
+  - {name: "Le Monde Diplomatique (EN)", url: "https://mondediplo.com/spip.php?page=backend", tier: 2, tags: [argument, world], access: metered}
+  # DEAD - {name: "Hammer & Hope", url: "https://hammerandhope.org/feed", tier: 3, tags: [argument, justice], access: free}
+  - {name: "Convergence", url: "https://convergencemag.com/feed/", tier: 3, tags: [argument], access: free}
+
+  # --- liberal / centre
+  - {name: "The Atlantic", url: "https://www.theatlantic.com/feed/all/", tier: 2, tags: [argument, uspol], access: metered}
+  - {name: "Washington Monthly", url: "https://washingtonmonthly.com/feed/", tier: 3, tags: [argument, uspol], access: free}
+  - {name: "Democracy Journal", url: "https://democracyjournal.org/feed/", tier: 3, tags: [argument, uspol], access: free}
+  - {name: "The Bulwark", url: "https://www.thebulwark.com/feed", tier: 3, tags: [argument, uspol], access: metered}
+  - {name: "Persuasion", url: "https://www.persuasion.community/feed", tier: 3, tags: [argument], access: metered}
+  - {name: "Vox", url: "https://www.vox.com/rss/index.xml", tier: 3, tags: [argument, uspol], access: free}
+  - {name: "Slow Boring", url: "https://www.slowboring.com/feed", tier: 3, tags: [argument, uspol], access: metered}
+  - {name: "Crooked Timber", url: "https://crookedtimber.org/feed/", tier: 3, tags: [argument], access: free}
+
+  # --- right / conservative
+  - {name: "National Review", url: "https://www.nationalreview.com/feed/", tier: 3, tags: [argument, uspol], access: metered}
+  - {name: "The American Conservative", url: "https://www.theamericanconservative.com/feed/", tier: 3, tags: [argument], access: free}
+  - {name: "Reason", url: "https://reason.com/feed/", tier: 3, tags: [argument, uspol], access: free}
+  - {name: "The Dispatch", url: "https://thedispatch.com/feed/", tier: 3, tags: [argument, uspol], access: metered}
+  # DEAD - {name: "City Journal", url: "https://www.city-journal.org/rss", tier: 3, tags: [argument], access: free}
+  - {name: "Compact", url: "https://www.compactmag.com/feed/", tier: 3, tags: [argument], access: metered}
+  - {name: "UnHerd", url: "https://unherd.com/feed/", tier: 3, tags: [argument], access: metered}
+  - {name: "Law & Liberty", url: "https://lawliberty.org/feed/", tier: 3, tags: [argument, justice], access: free}
+
+  # --- foreign affairs & ideas
+  - {name: "The Economist", url: "https://www.economist.com/latest/rss.xml", tier: 2, tags: [argument, world, money], access: paywall}
+  - {name: "The Economist — Briefing", url: "https://www.economist.com/briefing/rss.xml", tier: 2, tags: [argument, world], access: paywall}
+  - {name: "Foreign Affairs", url: "https://www.foreignaffairs.com/rss.xml", tier: 2, tags: [argument, world], access: paywall}
+  - {name: "Foreign Policy", url: "https://foreignpolicy.com/feed/", tier: 2, tags: [argument, world], access: metered}
+  - {name: "New Lines Magazine", url: "https://newlinesmag.com/feed/", tier: 3, tags: [argument, world], access: free}
+  - {name: "Noema", url: "https://www.noemamag.com/feed/", tier: 3, tags: [argument], access: free}
+  - {name: "Aeon", url: "https://aeon.co/feed.rss", tier: 3, tags: [argument], access: free}
+  - {name: "London Review of Books", url: "https://www.lrb.co.uk/feeds/rss", tier: 2, tags: [argument], access: paywall}
+  # DEAD - {name: "New York Review of Books", url: "https://www.nybooks.com/feed/", tier: 2, tags: [argument], access: paywall}
+  - {name: "Harper's", url: "https://harpers.org/feed/", tier: 3, tags: [argument], access: paywall}
+  - {name: "Engelsberg Ideas", url: "https://engelsbergideas.com/feed/", tier: 3, tags: [argument, world], access: free}
+  - {name: "Just Security", url: "https://www.justsecurity.org/feed/", tier: 2, tags: [argument, justice, war], access: free}
+  # DEAD - {name: "Lawfare", url: "https://www.lawfaremedia.org/feeds/all.rss", tier: 2, tags: [argument, justice, war], access: free}
+  - {name: "Responsible Statecraft", url: "https://responsiblestatecraft.org/feed/", tier: 3, tags: [argument, war], access: free}
+  - {name: "The Diplomat — Analysis", url: "https://thediplomat.com/category/features/feed/", tier: 3, tags: [argument, world], access: metered}
+
+  # --- political economy
+  - {name: "Chartbook (Adam Tooze)", url: "https://adamtooze.substack.com/feed", tier: 3, tags: [argument, money], access: metered}
+  - {name: "Phenomenal World", url: "https://www.phenomenalworld.org/feed/", tier: 3, tags: [argument, money], access: free}
+  - {name: "Project Syndicate", url: "https://www.project-syndicate.org/rss", tier: 3, tags: [argument, money, world], access: metered}
+  # DEAD - {name: "VoxEU", url: "https://cepr.org/rss/voxeu.xml", tier: 3, tags: [argument, money], access: free}
+  # DEAD - {name: "Brookings", url: "https://www.brookings.edu/feed/", tier: 3, tags: [argument, uspol], access: free}
+  - {name: "Roosevelt Institute", url: "https://rooseveltinstitute.org/feed/", tier: 3, tags: [argument, money], access: free}
+  - {name: "Economic Policy Institute", url: "https://www.epi.org/feed/", tier: 3, tags: [argument, money], access: free}
+  - {name: "Peterson Institute (PIIE)", url: "https://www.piie.com/rss/update.xml", tier: 3, tags: [argument, money], access: free}
+  - {name: "Bruegel", url: "https://www.bruegel.org/rss.xml", tier: 3, tags: [argument, money, world], access: free}
+
+  # ==================== ELECTIONS & VOTING ====================
+  # DEAD - {name: "Democracy Docket", url: "https://www.democracydocket.com/feed/", tier: 2, tags: [elections, justice], access: free}
+  - {name: "Votebeat", url: "https://votebeat.org/arc/outboundfeeds/rss/", tier: 2, tags: [elections], access: free}
+  - {name: "Stateline", url: "https://stateline.org/feed/", tier: 2, tags: [elections, uspol], access: free}
+  - {name: "Election Law Blog", url: "https://electionlawblog.org/?feed=rss2", tier: 2, tags: [elections, justice], access: free}
+  # DEAD - {name: "Brennan Center", url: "https://www.brennancenter.org/feeds/analysis.rss", tier: 2, tags: [elections, justice], access: free}
+  - {name: "Campaign Legal Center", url: "https://campaignlegal.org/rss.xml", tier: 3, tags: [elections], access: free}
+  - {name: "OpenSecrets", url: "https://www.opensecrets.org/news/feed/", tier: 2, tags: [elections, money], access: free}
+  - {name: "Sabato's Crystal Ball", url: "https://centerforpolitics.org/crystalball/feed/", tier: 3, tags: [elections], access: free}
+  - {name: "The Downballot", url: "https://www.the-downballot.com/feed", tier: 3, tags: [elections], access: metered}
+  - {name: "Inside Elections", url: "https://insideelections.com/rss", tier: 3, tags: [elections], access: metered}
+  - {name: "Cook Political Report", url: "https://www.cookpolitical.com/rss.xml", tier: 3, tags: [elections], access: paywall}
+  - {name: "Ballotpedia News", url: "https://news.ballotpedia.org/feed/", tier: 3, tags: [elections], access: free}
+
+  # ==================== WASHINGTON, DEEPER ====================
+  - {name: "Politico — Congress", url: "https://rss.politico.com/congress.xml", tier: 2, tags: [uspol], access: free}
+  - {name: "Politico — White House", url: "https://rss.politico.com/whitehouse.xml", tier: 2, tags: [uspol], access: free}
+  - {name: "Politico — Defense", url: "https://rss.politico.com/defense.xml", tier: 2, tags: [uspol, war], access: free}
+  # DEAD - {name: "Politico — Economy", url: "https://rss.politico.com/economy.xml", tier: 2, tags: [uspol, money], access: free}
+  - {name: "The Hill — Senate", url: "https://thehill.com/homenews/senate/feed/", tier: 2, tags: [uspol], access: free}
+  - {name: "The Hill — House", url: "https://thehill.com/homenews/house/feed/", tier: 2, tags: [uspol], access: free}
+  - {name: "The Hill — Administration", url: "https://thehill.com/homenews/administration/feed/", tier: 2, tags: [uspol], access: free}
+  - {name: "Government Executive", url: "https://www.govexec.com/rss/all/", tier: 3, tags: [uspol], access: free}
+  - {name: "Federal News Network", url: "https://federalnewsnetwork.com/feed/", tier: 3, tags: [uspol], access: free}
+  - {name: "NPR Politics", url: "https://feeds.npr.org/1014/rss.xml", tier: 2, tags: [uspol], access: free}
+  # DEAD - {name: "Axios — Politics", url: "https://api.axios.com/feed/politics", tier: 2, tags: [uspol], access: free}
+  # DEAD - {name: "Semafor — Principals", url: "https://www.semafor.com/section/politics/rss.xml", tier: 3, tags: [uspol], access: free}
+  # DEAD - {name: "White House Briefing Room", url: "https://www.whitehouse.gov/briefing-room/feed/", tier: 1, tags: [uspol], access: free}
+  # DEAD - {name: "Supreme Court Opinions", url: "https://www.supremecourt.gov/rss/cases.aspx", tier: 1, tags: [uspol, justice], access: free}
+  - {name: "Congressional Budget Office", url: "https://www.cbo.gov/publications/all/rss.xml", tier: 1, tags: [uspol, money], access: free}
+  - {name: "Federal Register — Rules", url: "https://www.federalregister.gov/api/v1/documents.rss?conditions%5Btype%5D%5B%5D=RULE", tier: 1, tags: [uspol], access: free}
+  # DEAD - {name: "FEC Press", url: "https://www.fec.gov/feeds/press-releases/", tier: 1, tags: [elections], access: free}
+  # DEAD - {name: "Inspectors General", url: "https://www.oversight.gov/rss/reports", tier: 1, tags: [uspol, justice], access: free}
+  # DEAD - {name: "City & State PA", url: "https://www.cityandstatepa.com/rss/", tier: 3, tags: [philly, uspol], access: free}
+  - {name: "Broad + Liberty", url: "https://broadandliberty.com/feed/", tier: 3, tags: [philly, argument], access: free}
+  # DEAD - {name: "WHYY — PlanPhilly", url: "https://whyy.org/programs/planphilly/feed/", tier: 3, tags: [philly], access: free}
+  - {name: "Chalkbeat Philadelphia", url: "https://philadelphia.chalkbeat.org/arc/outboundfeeds/rss/", tier: 3, tags: [philly], access: free}
+  - {name: "Resolve Philly", url: "https://resolvephilly.org/feed", tier: 3, tags: [philly, justice], access: free}
+
+  # ==================== MORE WORLD & WIRE VOLUME ====================
+  - {name: "Guardian US", url: "https://www.theguardian.com/us-news/rss", tier: 2, tags: [uspol], access: free}
+  - {name: "Guardian Global Development", url: "https://www.theguardian.com/global-development/rss", tier: 3, tags: [world, justice], access: free}
+  - {name: "BBC Europe", url: "https://feeds.bbci.co.uk/news/world/europe/rss.xml", tier: 1, tags: [world], access: free}
+  - {name: "BBC Africa", url: "https://feeds.bbci.co.uk/news/world/africa/rss.xml", tier: 1, tags: [world], access: free}
+  - {name: "BBC Asia", url: "https://feeds.bbci.co.uk/news/world/asia/rss.xml", tier: 1, tags: [world], access: free}
+  - {name: "BBC Middle East", url: "https://feeds.bbci.co.uk/news/world/middle_east/rss.xml", tier: 1, tags: [world, war], access: free}
+  - {name: "BBC Latin America", url: "https://feeds.bbci.co.uk/news/world/latin_america/rss.xml", tier: 1, tags: [world], access: free}
+  - {name: "NPR National", url: "https://feeds.npr.org/1003/rss.xml", tier: 2, tags: [uspol], access: free}
+  # DEAD - {name: "CBC Politics", url: "https://www.cbc.ca/webfeed/rss/rss-politics", tier: 3, tags: [world], access: free}
+  - {name: "ABC Australia", url: "https://www.abc.net.au/news/feed/51120/rss.xml", tier: 2, tags: [world], access: free}
+  - {name: "RNZ Pacific", url: "https://www.rnz.co.nz/rss/pacific.xml", tier: 3, tags: [world], access: free}
+  - {name: "Irish Times World", url: "https://www.irishtimes.com/arc/outboundfeeds/feed-world/", tier: 3, tags: [world], access: metered}
+  - {name: "Politico Europe", url: "https://www.politico.eu/feed/", tier: 2, tags: [world], access: free}
+  # DEAD - {name: "EUobserver", url: "https://euobserver.com/rss.xml", tier: 3, tags: [world], access: metered}
+  # DEAD - {name: "Radio Free Europe", url: "https://www.rferl.org/api/zrqiteuuir", tier: 3, tags: [world, war], access: free}
+  - {name: "The Moscow Times", url: "https://www.themoscowtimes.com/rss/news", tier: 3, tags: [world], access: free}
+  - {name: "Hong Kong Free Press", url: "https://hongkongfp.com/feed/", tier: 3, tags: [world, justice], access: free}
+  - {name: "Nikkei Asia", url: "https://asia.nikkei.com/rss/feed/nar", tier: 3, tags: [world, money], access: paywall}
+  - {name: "The Hindu", url: "https://www.thehindu.com/news/national/feeder/default.rss", tier: 3, tags: [world], access: free}
+  # DEAD - {name: "Scroll.in", url: "https://scroll.in/feed", tier: 3, tags: [world, argument], access: free}
+  - {name: "The Daily Star (Bangladesh)", url: "https://www.thedailystar.net/frontpage/rss.xml", tier: 3, tags: [world], access: free}
+  - {name: "Myanmar Now", url: "https://myanmar-now.org/en/feed/", tier: 3, tags: [world, war], access: free}
+  # DEAD - {name: "The Irrawaddy", url: "https://www.irrawaddy.com/feed", tier: 3, tags: [world, war], access: free}
+  # DEAD - {name: "Benar News", url: "https://www.benarnews.org/english/index.rss", tier: 3, tags: [world], access: free}
+  - {name: "The New Humanitarian", url: "https://www.thenewhumanitarian.org/rss.xml", tier: 2, tags: [world, justice], access: free}
+  # DEAD - {name: "Devex", url: "https://www.devex.com/news.rss", tier: 3, tags: [world], access: metered}
+  # DEAD - {name: "Semafor Africa", url: "https://www.semafor.com/section/africa/rss.xml", tier: 3, tags: [world], access: free}
+  # DEAD - {name: "The Continent", url: "https://mg.co.za/tag/the-continent/feed/", tier: 3, tags: [world], access: free}
+  # DEAD - {name: "Nation Africa", url: "https://nation.africa/kenya/rss", tier: 3, tags: [world], access: metered}
+  - {name: "The Namibian", url: "https://www.namibian.com.na/feed/", tier: 3, tags: [world], access: free}
+  - {name: "Insight Crime", url: "https://insightcrime.org/feed/", tier: 3, tags: [world, justice], access: free}
+  - {name: "Americas Quarterly", url: "https://www.americasquarterly.org/feed/", tier: 3, tags: [world, argument], access: free}
+  - {name: "Rio Times", url: "https://www.riotimesonline.com/feed/", tier: 3, tags: [world], access: free}
+
+  # ==================== MARKETS & BUSINESS, DEEPER ====================
+  # DEAD - {name: "Reuters Markets", url: "https://feeds.reuters.com/reuters/USMarketsNews", tier: 1, tags: [money], access: free}
+  - {name: "CNBC Economy", url: "https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=20910258", tier: 2, tags: [money], access: free}
+  - {name: "Yahoo Finance", url: "https://finance.yahoo.com/news/rssindex", tier: 3, tags: [money], access: free}
+  - {name: "Business Insider", url: "https://markets.businessinsider.com/rss/news", tier: 3, tags: [money], access: metered}
+  - {name: "Barron's", url: "https://feeds.content.dowjones.io/public/rss/RSSMarketsMain", tier: 2, tags: [money], access: paywall}
+  # DEAD - {name: "SEC EDGAR — 8-K", url: "https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&type=8-K&dateb=&owner=include&count=40&output=atom", tier: 1, tags: [money], access: free}
+  - {name: "CFTC Press", url: "https://www.cftc.gov/RSS/RSSENF/rssenf.xml", tier: 1, tags: [money, justice], access: free}
+  # DEAD - {name: "FDIC Press", url: "https://www.fdic.gov/news/press-releases/rss.xml", tier: 1, tags: [money], access: free}
+  - {name: "BLS Releases", url: "https://www.bls.gov/feed/bls_latest.rss", tier: 1, tags: [money], access: free}
+  # DEAD - {name: "IMF News", url: "https://www.imf.org/en/News/RSS?language=eng", tier: 1, tags: [money, world], access: free}
+  # DEAD - {name: "World Bank", url: "https://www.worldbank.org/en/news/all?format=rss", tier: 1, tags: [money, world], access: free}
+  - {name: "ECB Press", url: "https://www.ecb.europa.eu/rss/press.html", tier: 1, tags: [money, world], access: free}
+  - {name: "Bank of England", url: "https://www.bankofengland.co.uk/rss/news", tier: 1, tags: [money, world], access: free}
+  - {name: "Naked Capitalism", url: "https://www.nakedcapitalism.com/feed", tier: 3, tags: [money, argument], access: free}
+  # DEAD - {name: "Matt Levine / Bloomberg Opinion", url: "https://feeds.bloomberg.com/opinion/news.rss", tier: 3, tags: [money, argument], access: paywall}
+
+  # ==================== ENVIRONMENT & SCIENCE, DEEPER ====================
+  - {name: "Climate Home News", url: "https://www.climatechangenews.com/feed/", tier: 3, tags: [env], access: free}
+  # DEAD - {name: "Heatmap News", url: "https://heatmap.news/feed", tier: 3, tags: [env], access: metered}
+  - {name: "The Revelator", url: "https://therevelator.org/feed/", tier: 3, tags: [env], access: free}
+  # DEAD - {name: "EPA Newsroom", url: "https://www.epa.gov/newsreleases/search/rss", tier: 1, tags: [env, uspol], access: free}
+  # DEAD - {name: "NASA Earth", url: "https://www.nasa.gov/rss/dyn/earth.rss", tier: 1, tags: [env, sci], access: free}
+  - {name: "Copernicus / ESA", url: "https://www.esa.int/rssfeed/Our_Activities/Observing_the_Earth", tier: 1, tags: [env, sci], access: free}
+  - {name: "Science Magazine", url: "https://www.science.org/rss/news_current.xml", tier: 2, tags: [sci], access: metered}
+  - {name: "MIT Technology Review", url: "https://www.technologyreview.com/feed/", tier: 3, tags: [sci], access: metered}
+  - {name: "404 Media", url: "https://www.404media.co/rss/", tier: 3, tags: [sci, justice], access: metered}
+  - {name: "The Register", url: "https://www.theregister.com/headlines.atom", tier: 3, tags: [sci], access: free}
+  - {name: "Krebs on Security", url: "https://krebsonsecurity.com/feed/", tier: 2, tags: [sci, justice], access: free}
+  - {name: "CISA Advisories", url: "https://www.cisa.gov/cybersecurity-advisories/all.xml", tier: 1, tags: [alert, sci], access: free}

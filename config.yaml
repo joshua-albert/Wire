@@ -1,0 +1,143 @@
+site:
+  title: THE WIRE
+  tagline: everything, everywhere, as it lands
+  timezone: America/New_York
+  banner: ''
+  refresh_seconds: 300
+  window_hours: 48
+  per_section: 120
+  thread_pages: 400
+  thread_retention_days: 5
+urgency_terms:
+  breaking: 9
+  just in: 8
+  killed: 6
+  dead: 5
+  explosion: 6
+  airstrike: 7
+  strike: 3
+  invasion: 9
+  coup: 10
+  state of emergency: 8
+  evacuat: 6
+  shooting: 6
+  mass casualt: 9
+  hostage: 7
+  collapse: 6
+  resign: 6
+  ousted: 7
+  arrested: 4
+  indicted: 6
+  charged: 3
+  ceasefire: 7
+  declares war: 10
+  outbreak: 7
+  quarantine: 7
+  earthquake: 6
+  tsunami: 9
+  wildfire: 5
+  flooding: 5
+  hurricane: 6
+  recall: 3
+  bankrupt: 6
+  halted: 5
+  emergency meeting: 6
+  sanctions: 5
+  verdict: 5
+  ruling: 4
+  court rules: 5
+  strikes down: 6
+interest_terms:
+  philadelphia: 8
+  philly: 8
+  septa: 6
+  delaware valley: 4
+  camden: 3
+  harrisburg: 3
+  pennsylvania: 4
+  city council: 2
+  district attorney: 3
+  krasner: 5
+  parker: 3
+sections:
+- id: philly
+  label: PHILADELPHIA
+  tags:
+  - philly
+- id: uspol
+  label: WASHINGTON
+  tags:
+  - uspol
+- id: elections
+  label: ELECTIONS & VOTING
+  tags:
+  - elections
+- id: war
+  label: WAR & CONFLICT
+  tags:
+  - war
+- id: world
+  label: WORLD
+  tags:
+  - world
+- id: justice
+  label: JUSTICE & RIGHTS
+  tags:
+  - justice
+- id: money
+  label: MONEY
+  tags:
+  - money
+- id: argument
+  label: ARGUMENT
+  tags:
+  - argument
+- id: env
+  label: EARTH
+  tags:
+  - env
+- id: sci
+  label: SCIENCE & HEALTH
+  tags:
+  - sci
+scoring:
+  tier_bonus:
+    1: 6
+    2: 4
+    3: 2
+    4: 0
+  cluster_threshold: 0.38
+  anchor_threshold: 0.22
+  corroboration_bonus: 4
+  syndication_bonus: 0.4
+  aggregator_tiers:
+  - 4
+  correction_bonus: 6.0
+  pulled_bonus: 4.0
+  velocity_window_hours: 3
+  velocity_weight: 3.0
+  velocity_cap: 8
+  unconfirmed_penalty: -3
+  reliability_weight: 4.0
+  decay_per_hour: 1.2
+  novelty_weight: 10.0
+verification:
+  check_link_rot: true
+  recheck_per_run: 25
+beats:
+  min_today: 3
+  z_score: 2.0
+siren:
+  score: 34
+  min_sources: 4
+email:
+  enabled: true
+  batch_size: 6
+  min_score: 18
+  min_minutes_between: 45
+  siren_breaks_cooldown: true
+  max_items_per_email: 25
+  escalate_outlets: 6
+  escalate_velocity: 2.0
+translation:
+  enabled: true
