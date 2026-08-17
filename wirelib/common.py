@@ -18,6 +18,12 @@ THREADS_PATH = ROOT / "threads.json"
 
 UA = "TheWire/2.0 (personal news aggregator)"
 
+# Some servers reject any user-agent they don't recognise, which blocks a
+# personal feed reader from the very files a site publishes for readers.
+# This is the fallback identity, used only after a 403.
+BROWSER_UA = ("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 "
+              "(KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36")
+
 STOPWORDS = set("""
 a an the and or but if in on at to for of with by from as is are was were be been
 being it its this that these those he she they them his her their we you i not no

@@ -8,7 +8,7 @@ from datetime import datetime, timezone
 import feedparser
 import requests
 
-from .common import UA, canonical_url, clean_text, now_utc
+from .common import BROWSER_UA, UA, canonical_url, clean_text, now_utc
 
 TIMEOUT = 15
 WORKERS = 16
@@ -41,6 +41,12 @@ def fetch_one(feed: dict, cache: dict):
 
     try:
         response = requests.get(url, headers=headers, timeout=TIMEOUT)
+        # Retry once as a browser. Roughly a fifth of the feeds refuse an
+        # unfamiliar user-agent outright, including several worth having.
+        if response.status_code in (403, 406, 429):
+            retry = dict(headers, **{"User-Agent": BROWSER_UA,
+                                     "Accept-Language": "en-US,en;q=0.9"})
+            response = requests.get(url, headers=retry, timeout=TIMEOUT)
     except requests.RequestException as exc:
         return feed, [], type(exc).__name__
 

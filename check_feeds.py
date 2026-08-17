@@ -18,12 +18,16 @@ import requests
 import yaml
 
 ROOT = Path(__file__).parent
-UA = "TheWire/1.0 (personal news aggregator)"
+from wirelib.common import BROWSER_UA, UA
 
 
 def test(feed):
     try:
         resp = requests.get(feed["url"], headers={"User-Agent": UA}, timeout=20)
+        if resp.status_code in (403, 406, 429):
+            resp = requests.get(
+                feed["url"], timeout=20,
+                headers={"User-Agent": BROWSER_UA, "Accept-Language": "en-US,en;q=0.9"})
     except requests.RequestException as exc:
         return feed, "FAIL", type(exc).__name__
     if resp.status_code >= 400:
