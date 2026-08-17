@@ -98,6 +98,12 @@ def decide_and_send(fresh: list[dict], cfg: dict, state: dict, site_url: str) ->
     if not conf["enabled"]:
         return
 
+    # Email is a convenience; the site is the product. Anything unscored gets
+    # dropped rather than allowed to abort the run.
+    fresh = [t for t in fresh if "_score" in t]
+    if not fresh:
+        return
+
     siren_score = cfg["siren"]["score"]
 
     sirens = [t for t in fresh if t["_score"] >= siren_score and t.get("email_level", 0) < 2]

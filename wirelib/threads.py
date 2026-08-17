@@ -189,6 +189,16 @@ def merge_into_threads(groups: list[dict], threads: dict, state: dict,
         if best_thread is None:
             tags = sorted({t for i in group["items"] for t in i["tags"]})
             best_thread = _new_thread(group, tags)
+            # Thread ids come from the lead article's URL. Two stories can
+            # land on the same id, and writing straight into the dict lets
+            # the newcomer evict a live thread — leaving an orphan that is
+            # still referenced elsewhere but never scored again.
+            if best_thread["id"] in threads:
+                suffix = 1
+                base = best_thread["id"]
+                while f"{base}-{suffix}" in threads:
+                    suffix += 1
+                best_thread["id"] = f"{base}-{suffix}"
             threads[best_thread["id"]] = best_thread
             live_tokens.append((best_thread, set(best_thread["lead_tokens"])))
             brand_new.append(best_thread)

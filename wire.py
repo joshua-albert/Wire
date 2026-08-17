@@ -102,10 +102,11 @@ def main() -> int:
           f"{flagged} with corrections, {unusual} unusual beats")
 
     # --- 7. mail
-    live_ids = {t["id"] for t in live}
-    fresh = [t for t in touched if t["id"] in live_ids]
+    scored = {id(t) for t in live}
+    fresh = [t for t in touched if id(t) in scored]
+    seen_ids = {id(t) for t in fresh}
     fresh += [t for t in live if t.get("_flag") and t.get("email_level", 0) >= 1
-              and t["id"] not in {f["id"] for f in fresh}]
+              and id(t) not in seen_ids]
     mailer.decide_and_send(fresh, cfg, state, site_url or "your site")
 
     # --- 8. housekeeping
