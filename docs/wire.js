@@ -60,12 +60,16 @@
    document.querySelectorAll('.lane').forEach(function(lane){
      var shown=0, cap=parseInt(lane.dataset.cap||'999',10);
      lane.querySelectorAll('li[data-id]').forEach(function(li){
-       var ok=(topic==='all'||(' '+li.dataset.tags+' ').indexOf(' '+topic+' ')>-1)
+       var ok=(topic==='all'?li.dataset.notable!=='0':(' '+li.dataset.tags+' ').indexOf(' '+topic+' ')>-1)
          &&(!query||li.dataset.q.indexOf(query)>-1);
        if(ok&&shown<cap){li.hidden=false;shown++}else li.hidden=true});
      var empty=lane.querySelector('.empty-filter'); if(empty)empty.hidden=shown>0;
      if(lane.dataset.optional&&topic!=='all'&&!query)lane.hidden=shown===0;
-   })}
+   });
+   // The lead story only shows on the tab it belongs to.
+   var lead=document.querySelector('.lead'), lli=lead&&lead.querySelector('li[data-tags]');
+   if(lead&&lli)lead.hidden=!(topic==='all'||(' '+lli.dataset.tags+' ').indexOf(' '+topic+' ')>-1);
+ }
  tabs.forEach(function(b){b.addEventListener('click',function(){
    topic=b.dataset.topic;set('wire.topic',topic);apply();if(window.wireNowDraw)window.wireNowDraw()})});
  var q=document.getElementById('q');
@@ -88,7 +92,8 @@
  // ---- right now: newsroom posts fetched live from Bluesky, every minute
  var nowList=document.getElementById('nowlist');
  if(nowList&&window.WIRE_LIVE&&window.fetch){
-   var accts=window.WIRE_LIVE, posts={}, expanded=false, reached=0;
+   var accts=window.WIRE_LIVE, posts={}, expanded=false, reached=0, TOPIC_RX={};
+   var tw=window.WIRE_TOPICS||{}; for(var k in tw){try{TOPIC_RX[k]=new RegExp(tw[k],'i')}catch(e){}}
    function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
    function clean(t){t=t.replace(/(https?:\/\/\S+|\b[a-z0-9-]+\.[a-z]{2,6}\/\S+)/gi,'').replace(/\s{2,}/g,' ').trim();
      return t.length>220?t.slice(0,217).replace(/\s\S*$/,'')+'…':t}
@@ -106,7 +111,8 @@
    function draw(){
      var cut=Date.now()-3*3600000, list=Object.keys(posts).map(function(k){return posts[k]})
        .filter(function(p){return p.t>cut&&p.t<Date.now()+120000})
-       .filter(function(p){return topic==='all'||p.tags.indexOf(topic)>-1})
+       .filter(function(p){if(topic==='all')return true;
+         var rx=TOPIC_RX[topic]; return !!(rx&&rx.test(p.text))})
        .sort(function(a,b){return b.t-a.t});
      var few=window.innerWidth<700?5:8, show=expanded?list.slice(0,40):list.slice(0,few);
      if(!reached){nowList.innerHTML='<li class="empty">Couldn\'t reach the newsroom accounts just now. Trying again every minute.</li>';return}
