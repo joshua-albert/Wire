@@ -15,7 +15,17 @@ WORKERS = 16
 MAX_ITEMS_PER_FEED = 60
 
 
-def entry_time(entry) -> datetime:
+# Shopping, deals and evergreen service pieces. Feeds mix these in with the
+# news, and because many carry no date they used to look brand new forever.
+import re as _re
+SOFT = _re.compile(
+    r"\b(lowest price|best deals?|deals? on|on sale|% off|discount code|coupon|promo code"
+    r"|gift guide|gifts? (?:for|she|he|they)|best .{0,30} to buy|we tested|our favorite"
+    r"|shop (?:the|our)|review: |recipe|horoscope|crossword|wordle|how to watch"
+    r"|where to watch|live stream|streaming guide)\b", _re.IGNORECASE)
+
+
+def entry_time(entry) -> datetime | None:
     for key in ("published_parsed", "updated_parsed", "created_parsed"):
         value = entry.get(key)
         if value:
@@ -23,7 +33,7 @@ def entry_time(entry) -> datetime:
                 return datetime(*value[:6], tzinfo=timezone.utc)
             except (TypeError, ValueError):
                 continue
-    return now_utc()
+    return None
 
 
 def fetch_one(feed: dict, cache: dict):
@@ -68,6 +78,15 @@ def fetch_one(feed: dict, cache: dict):
 
 def collect(feeds: list[dict], state: dict) -> tuple[list[dict], dict]:
     cache = state.setdefault("http_cache", {})
+    # Undated items get the time we first saw them, not "now" on every run.
+    # Otherwise an April tax explainer stays "breaking" into November.
+    first_time = "undated" not in state
+    undated = state.setdefault("undated", {})
+    stamp = now_utc().isoformat()
+    if first_time:
+        # Anything undated already sitting in a feed on the first run is old.
+        from datetime import timedelta
+        stamp = (now_utc() - timedelta(days=4)).isoformat()
     items: list[dict] = []
     errors: dict[str, str] = {}
 
@@ -79,14 +98,21 @@ def collect(feeds: list[dict], state: dict) -> tuple[list[dict], dict]:
             for entry in entries:
                 link = entry.get("link") or ""
                 title = clean_text(entry.get("title", ""), 300)
+                # Social feeds (Bluesky profiles) have no titles, just the post.
+                if not title and feed.get("social"):
+                    title = clean_text(entry.get("summary", ""), 220)
                 if not link or not title:
+                    continue
+                if SOFT.search(title):
                     continue
 
                 # Aggregators carry other people's work. Recording the feed
                 # name as the source makes a dozen different newsrooms look
                 # like one outlet endlessly correcting itself — and inflates
                 # nothing, because it also hides real corroboration.
-                publisher = feed["name"]
+                # A newsroom's social account is the same newsroom, so it can
+                # name the publisher it belongs to and never counts twice.
+                publisher = feed.get("publisher") or feed["name"]
                 origin = entry.get("source")
                 if isinstance(origin, dict) and origin.get("title"):
                     publisher = clean_text(origin["title"], 60)
@@ -102,9 +128,22 @@ def collect(feeds: list[dict], state: dict) -> tuple[list[dict], dict]:
                     "source": publisher,
                     "feed": feed["name"],
                     "tier": int(feed.get("tier", 3)),
+                    "official": bool(feed.get("official")),
                     "access": feed.get("access", "free"),
                     "tags": list(feed.get("tags", [])),
-                    "published": entry_time(entry).isoformat(),
+                    "published": _published(entry, canonical_url(link), undated, stamp),
                     "summary": clean_text(entry.get("summary", ""), 260),
                 })
+    if first_time:
+        stamp = now_utc().isoformat()
+    if len(undated) > 20000:
+        keep = sorted(undated.items(), key=lambda kv: kv[1], reverse=True)[:12000]
+        state["undated"] = dict(keep)
     return items, errors
+
+
+def _published(entry, url: str, undated: dict, stamp: str) -> str:
+    when = entry_time(entry)
+    if when:
+        return when.isoformat()
+    return undated.setdefault(url, stamp)

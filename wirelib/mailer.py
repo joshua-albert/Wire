@@ -10,28 +10,41 @@ from email.message import EmailMessage
 from .common import now_utc, parse_ts
 
 
+STAGE_TEXT = {"spotted": "Spotted", "spreading": "Spreading", "confirmed": "Confirmed",
+              "changed": "Changed"}
+
+
+def _why(thread: dict) -> str:
+    stage = thread.get("_stage", "spotted")
+    n = thread.get("_independent", 1)
+    if stage == "spreading":
+        return f"Spreading: {thread['_velocity']:.1f} newsrooms an hour, {thread['_outlets']} so far"
+    if stage == "confirmed":
+        return (f"Confirmed: {n} independent newsrooms" if n >= 2
+                else "Confirmed: official source")
+    if stage == "changed":
+        flag = thread.get("_flag") or {}
+        detail = f" ({flag.get('detail')})" if flag.get("detail") else ""
+        return f"Changed: {flag.get('kind', 'pulled').lower()}{detail}".replace("&middot;", "/")
+    return "Spotted: one newsroom so far"
+
+
 def _row(thread: dict, site_url: str) -> tuple[str, str]:
-    extra = f" (+{thread['_outlets'] - 1} outlets)" if thread["_outlets"] > 1 else ""
-    flag = ""
-    if thread["_status"] == "UNCONFIRMED":
-        flag = " [UNCONFIRMED]"
-    elif thread["_velocity"] >= 1.5:
-        flag = f" [{thread['_velocity']:.1f} outlets/hr]"
-
-    text = (f"{thread['title']}{flag}\n  {thread['source']}{extra}\n"
-            f"  {thread['url']}\n  thread: {site_url.rstrip('/')}/t/{thread['id']}.html\n")
-
-    colour = "#a50" if thread["_status"] == "UNCONFIRMED" else "#555"
+    why = _why(thread)
+    page = f"{site_url.rstrip('/')}/t/{thread['id']}.html" if site_url.startswith("http") else ""
+    text = (f"{thread['title']}\n  {why}. First: {thread['source']}\n  {thread['url']}\n"
+            + (f"  How it unfolded: {page}\n" if page else ""))
+    colour = {"spreading": "#d9431a", "confirmed": "#11795a",
+              "changed": "#a8610b"}.get(thread.get("_stage"), "#7f8792")
     markup = (
-        f'<p style="margin:0 0 14px">'
-        f'<a href="{html.escape(thread["url"])}" style="color:#00c;font-weight:bold;'
-        f'text-transform:uppercase;text-decoration:none;font-size:15px">'
+        f'<p style="margin:0 0 18px">'
+        f'<span style="color:{colour};font-size:13px;font-weight:600">{html.escape(why)}</span><br>'
+        f'<a href="{html.escape(thread["url"])}" style="color:#16191d;font-family:Georgia,serif;'
+        f'font-size:18px;line-height:1.3;font-weight:600;text-decoration:none">'
         f'{html.escape(thread["title"])}</a><br>'
-        f'<span style="color:{colour};font-size:11px;text-transform:uppercase">'
-        f'{html.escape(thread["source"])}{html.escape(extra)}{html.escape(flag)}</span> '
-        f'<a href="{site_url.rstrip("/")}/t/{thread["id"]}.html" '
-        f'style="font-size:11px;color:#555">thread</a></p>'
-    )
+        f'<span style="color:#4d5561;font-size:13px">{html.escape(thread["source"])}</span>'
+        + (f' <a href="{page}" style="font-size:13px;color:#7f8792">How it unfolded</a>' if page else "")
+        + '</p>')
     return text, markup
 
 
@@ -73,15 +86,17 @@ def send(threads: list[dict], cfg: dict, site_url: str, kicker: str) -> bool:
     text_rows, html_rows = zip(*(_row(t, site_url) for t in picked))
 
     message = EmailMessage()
-    message["Subject"] = f"WIRE: {picked[0]['title'][:110]}"
+    message["Subject"] = f"{kicker.capitalize()}: {picked[0]['title'][:110]}"
     message["From"] = from_addr
     message["To"] = to_addr
     message.set_content(
         f"{kicker}\n\n" + "\n".join(text_rows) + f"\nFull page: {site_url}\n")
     message.add_alternative(
-        f'<div style="font-family:Arial,Helvetica,sans-serif;max-width:640px">'
-        f'<div style="border-bottom:3px double #000;padding-bottom:6px;margin-bottom:14px;'
-        f'letter-spacing:.2em;font-weight:bold">THE WIRE &middot; {html.escape(kicker.upper())}</div>'
+        f'<div style="font-family:-apple-system,Segoe UI,Arial,sans-serif;max-width:620px">'
+        f'<div style="font-family:Georgia,serif;font-size:22px;font-weight:700;'
+        f'border-bottom:1px solid #e4e7eb;padding-bottom:10px;margin-bottom:18px">'
+        f'The Wire <span style="font-family:Arial,sans-serif;font-size:13px;font-weight:400;'
+        f'color:#7f8792">{html.escape(kicker)}</span></div>'
         f'{"".join(html_rows)}'
         f'<p style="font-size:11px;color:#555;border-top:1px solid #ccc;padding-top:8px">'
         f'<a href="{site_url}" style="color:#555">Open the full page</a></p></div>',
@@ -105,34 +120,55 @@ def send(threads: list[dict], cfg: dict, site_url: str, kicker: str) -> bool:
     return True
 
 
-def decide_and_send(fresh: list[dict], cfg: dict, state: dict, site_url: str) -> None:
+def decide_and_send(threads: list[dict], cfg: dict, state: dict, site_url: str) -> None:
     """
-    Three reasons to mail you:
-      1. A siren-level story broke.
-      2. A story you were already told about escalated hard.
-      3. Enough ordinary new stories piled up, and the cooldown has passed.
+    Mail only when a story moves up a stage. Spotted to spreading, spreading
+    to confirmed, or anything that changed after you might have read it.
+    A plain new headline is never a reason to email.
+
+      - big and moving (siren score or many newsrooms): sent at once
+      - everything else that moved up: batched, at most every N minutes
     """
     conf = cfg["email"]
     if not conf["enabled"]:
         return
+    rank = {"spotted": 0, "spreading": 1, "confirmed": 2, "changed": 3}
+    if not state.get("stage_mail"):
+        # First run under stage alerts: note where everything stands, send
+        # nothing, so you don't get a flood of old stories.
+        for t in threads:
+            if "_stage" in t:
+                t["mailed_stage"] = t["_stage"]
+        state["stage_mail"] = True
+        print("email: stage alerts set up; nothing sent this run")
+        return
+    siren = cfg["siren"]["score"]
+    min_score = conf["min_score"]
 
-    # Email is a convenience; the site is the product. Anything unscored gets
-    # dropped rather than allowed to abort the run.
-    fresh = [t for t in fresh if "_score" in t]
-    if not fresh:
+    moved = []
+    for t in threads:
+        if "_stage" not in t:
+            continue
+        stage, before = t["_stage"], t.get("mailed_stage")
+        if before is not None and rank[stage] <= rank.get(before, 0):
+            continue
+        if stage == "spotted":
+            continue
+        if stage == "changed":
+            # Corrections matter on stories people actually saw.
+            if t.get("_independent", 1) < 2 and not before:
+                continue
+        elif t["_score"] < min_score:
+            continue
+        if stage == "confirmed" and before is None and t.get("_independent", 1) < 3:
+            continue  # wait for real weight before the first email
+        moved.append(t)
+
+    if not moved:
         return
 
-    siren_score = cfg["siren"]["score"]
-
-    sirens = [t for t in fresh if t["_score"] >= siren_score and t.get("email_level", 0) < 2]
-    escalated = [
-        t for t in fresh
-        if t.get("email_level", 0) == 1
-        and t["_outlets"] >= conf.get("escalate_outlets", 6)
-        and t["_velocity"] >= conf.get("escalate_velocity", 2.0)
-    ]
-    ordinary = [t for t in fresh
-                if t["_score"] >= conf["min_score"] and t.get("email_level", 0) == 0]
+    urgent = [t for t in moved if t["_score"] >= siren
+              or t.get("_independent", 1) >= cfg["siren"]["min_sources"] and t["_stage"] == "spreading"]
 
     last = state.get("last_email")
     cooled = True
@@ -140,22 +176,15 @@ def decide_and_send(fresh: list[dict], cfg: dict, state: dict, site_url: str) ->
         gap = (now_utc() - parse_ts(last)).total_seconds() / 60
         cooled = gap >= conf["min_minutes_between"]
 
-    batch, kicker = [], ""
-    if sirens:
-        batch, kicker = sirens, "breaking"
-    elif escalated:
-        batch, kicker = escalated, "escalating"
-    elif ordinary and len(ordinary) >= conf["batch_size"] and cooled:
-        batch, kicker = ordinary, f"{len(ordinary)} new"
-
-    if not batch:
-        held = len(ordinary)
-        if held:
-            print(f"email: holding {held} stories "
-                  f"(need {conf['batch_size']}, or wait out the cooldown)")
+    if urgent:
+        batch, kicker = moved, "breaking"
+    elif cooled and len(moved) >= max(1, conf.get("batch_size", 3) // 2):
+        batch, kicker = moved, f"{len(moved)} stories moved up"
+    else:
+        print(f"email: holding {len(moved)} stage change(s) for the next batch")
         return
 
     if send(batch, cfg, site_url, kicker):
         state["last_email"] = now_utc().isoformat()
-        for thread in batch:
-            thread["email_level"] = 2 if kicker in ("breaking", "escalating") else 1
+        for t in batch:
+            t["mailed_stage"] = t["_stage"]

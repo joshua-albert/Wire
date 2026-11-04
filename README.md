@@ -10,6 +10,27 @@ and emails you when something clears the bar.
 
 Free to run forever on GitHub Actions + GitHub Pages. No server, no bill.
 
+## How the front page reads (v3)
+
+Stories are sorted by **where they are in their life**, not by topic:
+
+| Stage | Means |
+|---|---|
+| **Spotted** | One newsroom so far, however many sites reprinted it. Unconfirmed. |
+| **Spreading** | Independent newsrooms are picking it up fast right now. |
+| **Confirmed** | Two or more independent newsrooms, or an official source (USGS, DOJ, NWS...). |
+| **Changed** | A number moved, a claim was qualified, or the story was pulled. |
+
+The signal bars next to each story count independent newsrooms (reprints of
+one wire story count once). **Latest** on the left is every notable story,
+newest first. **Abroad first** shows stories big in local foreign press
+before English-language outlets have them. Topics are filters along the top.
+
+Email only goes out when a story moves up a stage, never for a plain new
+headline. Official sources are marked `official: true` in `feeds.yaml`;
+newsroom social accounts use `social: true` and `publisher:` so they never
+count as a second newsroom.
+
 ---
 
 ## What's in the box

@@ -9,7 +9,7 @@ a story is spreading if you remember what it looked like an hour ago.
 
 from __future__ import annotations
 
-from .common import (content_words, digest, hours_since, now_utc, overlap,
+from .common import (norm_title, content_words, digest, hours_since, now_utc, overlap,
                      parse_ts, related)
 from .translate import display_title
 from .verify import (classify_change, find_revision, independence,
@@ -19,6 +19,7 @@ MAX_MEMBERS = 60
 MAX_HISTORY = 25
 MAX_PICKUP = 80
 MAX_OVERFLOW = 600
+MAX_THREAD_HOURS = 72
 
 
 # ------------------------------------------------- within-run clustering
@@ -98,8 +99,20 @@ def _absorb(thread: dict, group: dict) -> list[dict]:
     stamp = now_utc().isoformat()
     fresh = []
 
+    by_url = {m["url"]: m for m in thread["members"]}
     for item in group["items"]:
         if item["url"] in known:
+            # Same article, new headline: the outlet edited its own story.
+            # This is the most reliable revision signal there is.
+            mine = by_url.get(item["url"])
+            new_title = display_title(item)
+            if mine and new_title and norm_title(new_title) != norm_title(mine["title"]):
+                change = classify_change(mine["title"], new_title)
+                if change:
+                    change["source"] = mine["source"]
+                    thread.setdefault("changes", []).append(change)
+                    thread["changes"] = thread["changes"][-MAX_HISTORY:]
+                mine["title"] = new_title
             continue
         member = {
             "url": item["url"],
@@ -116,8 +129,11 @@ def _absorb(thread: dict, group: dict) -> list[dict]:
             "sig": shingles(f"{item['title']} {item.get('summary', '')}"),
         }
         # Did this outlet just refile its own story with something changed?
-        prior = (None if "alert" in (item.get("tags") or [])
-                 else find_revision(thread["members"], member))
+        # Across different URLs, only near-identical headlines count as a
+        # refile. Press offices reuse one template for unrelated cases
+        # ("Man Sentenced to N Years..."), and those are not corrections.
+        prior = (None if "alert" in (item.get("tags") or []) or item.get("official")
+                 else find_revision(thread["members"], member, similarity=0.85))
         # A correction only counts on a story others are also covering. A
         # lone templated feed item refiling itself is not news being revised,
         # and precision matters far more than recall here — one bogus
@@ -175,7 +191,12 @@ def merge_into_threads(groups: list[dict], threads: dict, state: dict,
     """Match this run's story groups onto existing threads, or start new ones."""
     terms, total = state["terms"], state.get("docs_counted", 0)
 
-    live = [t for t in threads.values() if hours_since(t["updated"]) <= window_hours * 2]
+    # A thread only takes new reports for a few days. Past that, a match is
+    # far more likely to be a different event with similar words (the
+    # wildfire alert that swallowed a month of unrelated disasters).
+    live = [t for t in threads.values()
+            if hours_since(t["updated"]) <= window_hours * 2
+            and hours_since(t["created"]) <= MAX_THREAD_HOURS]
     live_tokens = [(t, set(t.get("lead_tokens") or t["tokens"])) for t in live]
 
     touched, brand_new = [], []

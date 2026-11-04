@@ -25,12 +25,28 @@ feeds:
   - {name: "Sky News World",       url: "https://feeds.skynews.com/feeds/rss/world.xml", tier: 2, tags: [world]}
   # DEAD - {name: "CBC World",            url: "https://www.cbc.ca/webfeed/rss/rss-world", tier: 2, tags: [world]}
   - {name: "Euronews",             url: "https://www.euronews.com/rss?level=theme&name=news", tier: 3, tags: [world]}
-  - {name: "UN News",              url: "https://news.un.org/feed/subscribe/en/news/all/rss.xml", tier: 1, tags: [world]}
+  - {name: "UN News",              url: "https://news.un.org/feed/subscribe/en/news/all/rss.xml", tier: 1, tags: [world], official: true}
   - {name: "NYT World",            url: "https://rss.nytimes.com/services/xml/rss/nyt/World.xml", tier: 2, tags: [world]}
   - {name: "NYT Home",             url: "https://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml", tier: 2, tags: [world, uspol]}
   - {name: "WaPo World",           url: "https://feeds.washingtonpost.com/rss/world", tier: 2, tags: [world]}
   - {name: "CNN Top",              url: "http://rss.cnn.com/rss/cnn_topstories.rss", tier: 2, tags: [world, uspol]}
   - {name: "Semafor",              url: "https://www.semafor.com/rss.xml", tier: 3, tags: [world, money]}
+
+  # ---------- FAST LANE ----------
+  # RSS from big newsrooms can trail social media by 10-30 minutes. These
+  # close some of that gap: newsroom social accounts (Bluesky posts land the
+  # moment they're sent), last-hour searches, and official alerts. A social
+  # account is filed under its newsroom's name so it never counts twice.
+  - {name: "AP on Bluesky",        url: "https://bsky.app/profile/apnews.com/rss", tier: 1, tags: [world, uspol], social: true, publisher: "AP Top News"}
+  - {name: "Reuters on Bluesky",   url: "https://bsky.app/profile/reuters.com/rss", tier: 1, tags: [world, money], social: true, publisher: "Reuters"}
+  - {name: "NPR on Bluesky",       url: "https://bsky.app/profile/npr.org/rss", tier: 2, tags: [uspol], social: true, publisher: "NPR"}
+  - {name: "Inquirer on Bluesky",  url: "https://bsky.app/profile/inquirer.com/rss", tier: 2, tags: [philly], social: true, publisher: "Philadelphia Inquirer"}
+  - {name: "WHYY on Bluesky",      url: "https://bsky.app/profile/whyy.org/rss", tier: 2, tags: [philly], social: true, publisher: "WHYY"}
+  - {name: "Factal on Bluesky",    url: "https://bsky.app/profile/factal.com/rss", tier: 3, tags: [world, alert], social: true, publisher: "Factal"}
+  - {name: "BNO News on Bluesky",  url: "https://bsky.app/profile/bnonews.com/rss", tier: 3, tags: [world, alert], social: true, publisher: "BNO News"}
+  - {name: "GNews: last hour, breaking", url: "https://news.google.com/rss/search?q=%22breaking%22+OR+%22just+in%22+OR+%22developing%22+when:1h&hl=en-US&gl=US&ceid=US:en", tier: 4, tags: [world]}
+  - {name: "GNews: last hour, Philadelphia", url: "https://news.google.com/rss/search?q=Philadelphia+when:1h&hl=en-US&gl=US&ceid=US:en", tier: 4, tags: [philly]}
+  - {name: "NWS alerts, Philadelphia", url: "https://api.weather.gov/alerts/active.atom?point=39.9526,-75.1652", tier: 1, tags: [philly, env, alert], official: true}
 
   # ---------- WAR, CONFLICT, SECURITY ----------
   # DEAD - {name: "Kyiv Independent",     url: "https://kyivindependent.com/feed/", tier: 2, tags: [war, world]}
@@ -46,7 +62,7 @@ feeds:
   - {name: "Crisis Group",         url: "https://www.crisisgroup.org/rss.xml", tier: 3, tags: [war, world]}
   # DEAD - {name: "ACLED",                url: "https://acleddata.com/feed/", tier: 1, tags: [war]}
   # DEAD - {name: "Institute for the Study of War", url: "https://www.understandingwar.org/feeds/all.xml", tier: 3, tags: [war]}
-  - {name: "US Dept of Defense",   url: "https://www.defense.gov/DesktopModules/ArticleCS/RSS.ashx?ContentType=1&Site=945&max=20", tier: 1, tags: [war, uspol]}
+  - {name: "US Dept of Defense",   url: "https://www.defense.gov/DesktopModules/ArticleCS/RSS.ashx?ContentType=1&Site=945&max=20", tier: 1, tags: [war, uspol], official: true}
   # DEAD - {name: "US State Dept",        url: "https://www.state.gov/rss-feed/press-releases/feed/", tier: 1, tags: [world, uspol]}
 
   # ---------- THE LONG TAIL: REGIONS UNDER-COVERED IN US MEDIA ----------
@@ -96,9 +112,9 @@ feeds:
   - {name: "Roll Call",            url: "https://rollcall.com/feed/", tier: 3, tags: [uspol]}
   - {name: "SCOTUSblog",           url: "https://www.scotusblog.com/feed/", tier: 1, tags: [uspol, justice]}
   - {name: "Courthouse News",      url: "https://www.courthousenews.com/feed/", tier: 3, tags: [justice, uspol]}
-  - {name: "Federal Register — Presidential Docs", url: "https://www.federalregister.gov/api/v1/documents.rss?conditions%5Btype%5D%5B%5D=PRESDOCU", tier: 1, tags: [uspol]}
-  - {name: "GAO Reports",          url: "https://www.gao.gov/rss/reports.xml", tier: 1, tags: [uspol]}
-  - {name: "DOJ Press",            url: "https://www.justice.gov/news/rss?type=press_release", tier: 1, tags: [justice, uspol]}
+  - {name: "Federal Register — Presidential Docs", url: "https://www.federalregister.gov/api/v1/documents.rss?conditions%5Btype%5D%5B%5D=PRESDOCU", tier: 1, tags: [uspol], official: true}
+  - {name: "GAO Reports",          url: "https://www.gao.gov/rss/reports.xml", tier: 1, tags: [uspol], official: true}
+  - {name: "DOJ Press",            url: "https://www.justice.gov/news/rss?type=press_release", tier: 1, tags: [justice, uspol], official: true}
 
   # ---------- JUSTICE, POLICING, CIVIL RIGHTS ----------
   - {name: "ProPublica",           url: "https://www.propublica.org/feeds/propublica/main", tier: 2, tags: [justice, uspol]}
@@ -118,8 +134,8 @@ feeds:
   - {name: "Yale Environment 360", url: "https://e360.yale.edu/feed.xml", tier: 3, tags: [env]}
   # DEAD - {name: "DeSmog",               url: "https://www.desmog.com/feed/", tier: 3, tags: [env]}
   - {name: "Guardian Environment", url: "https://www.theguardian.com/environment/rss", tier: 2, tags: [env]}
-  - {name: "USGS Quakes M4.5+",    url: "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/4.5_day.atom", tier: 1, tags: [alert, env]}
-  - {name: "GDACS Disaster Alerts",url: "https://www.gdacs.org/xml/rss.xml", tier: 1, tags: [alert, env]}
+  - {name: "USGS Quakes M4.5+",    url: "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/4.5_day.atom", tier: 1, tags: [alert, env], official: true}
+  - {name: "GDACS Disaster Alerts",url: "https://www.gdacs.org/xml/rss.xml", tier: 1, tags: [alert, env], official: true}
   # DEAD - {name: "ReliefWeb",            url: "https://reliefweb.int/updates/rss.xml", tier: 1, tags: [alert, world]}
   # DEAD - {name: "NOAA News",            url: "https://www.noaa.gov/rss/all-noaa-news.xml", tier: 1, tags: [env, sci]}
 
@@ -134,7 +150,7 @@ feeds:
   - {name: "MarketWatch Top",      url: "https://feeds.content.dowjones.io/public/rss/mw_topstories", tier: 2, tags: [money]}
   - {name: "Financial Times",      url: "https://www.ft.com/rss/home", tier: 2, tags: [money, world]}
   # DEAD - {name: "Reuters Business",     url: "https://feeds.reuters.com/reuters/businessNews", tier: 1, tags: [money]}
-  - {name: "Federal Reserve Press",url: "https://www.federalreserve.gov/feeds/press_all.xml", tier: 1, tags: [money, uspol]}
+  - {name: "Federal Reserve Press",url: "https://www.federalreserve.gov/feeds/press_all.xml", tier: 1, tags: [money, uspol], official: true}
   # DEAD - {name: "US Treasury Press",    url: "https://home.treasury.gov/rss/press.xml", tier: 1, tags: [money, uspol]}
   # DEAD - {name: "SEC Litigation",       url: "https://www.sec.gov/rss/litigation/litreleases.xml", tier: 1, tags: [money, justice]}
   - {name: "Calculated Risk",      url: "https://feeds.feedburner.com/CalculatedRisk", tier: 3, tags: [money]}
@@ -291,8 +307,8 @@ feeds:
   # DEAD - {name: "Semafor — Principals", url: "https://www.semafor.com/section/politics/rss.xml", tier: 3, tags: [uspol], access: free}
   # DEAD - {name: "White House Briefing Room", url: "https://www.whitehouse.gov/briefing-room/feed/", tier: 1, tags: [uspol], access: free}
   # DEAD - {name: "Supreme Court Opinions", url: "https://www.supremecourt.gov/rss/cases.aspx", tier: 1, tags: [uspol, justice], access: free}
-  - {name: "Congressional Budget Office", url: "https://www.cbo.gov/publications/all/rss.xml", tier: 1, tags: [uspol, money], access: free}
-  - {name: "Federal Register — Rules", url: "https://www.federalregister.gov/api/v1/documents.rss?conditions%5Btype%5D%5B%5D=RULE", tier: 1, tags: [uspol], access: free}
+  - {name: "Congressional Budget Office", url: "https://www.cbo.gov/publications/all/rss.xml", tier: 1, tags: [uspol, money], access: free, official: true}
+  - {name: "Federal Register — Rules", url: "https://www.federalregister.gov/api/v1/documents.rss?conditions%5Btype%5D%5B%5D=RULE", tier: 1, tags: [uspol], access: free, official: true}
   # DEAD - {name: "FEC Press", url: "https://www.fec.gov/feeds/press-releases/", tier: 1, tags: [elections], access: free}
   # DEAD - {name: "Inspectors General", url: "https://www.oversight.gov/rss/reports", tier: 1, tags: [uspol, justice], access: free}
   # DEAD - {name: "City & State PA", url: "https://www.cityandstatepa.com/rss/", tier: 3, tags: [philly, uspol], access: free}
@@ -343,13 +359,13 @@ feeds:
   - {name: "Business Insider", url: "https://markets.businessinsider.com/rss/news", tier: 3, tags: [money], access: metered}
   - {name: "Barron's", url: "https://feeds.content.dowjones.io/public/rss/RSSMarketsMain", tier: 2, tags: [money], access: paywall}
   # DEAD - {name: "SEC EDGAR — 8-K", url: "https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&type=8-K&dateb=&owner=include&count=40&output=atom", tier: 1, tags: [money], access: free}
-  - {name: "CFTC Press", url: "https://www.cftc.gov/RSS/RSSENF/rssenf.xml", tier: 1, tags: [money, justice], access: free}
+  - {name: "CFTC Press", url: "https://www.cftc.gov/RSS/RSSENF/rssenf.xml", tier: 1, tags: [money, justice], access: free, official: true}
   # DEAD - {name: "FDIC Press", url: "https://www.fdic.gov/news/press-releases/rss.xml", tier: 1, tags: [money], access: free}
-  - {name: "BLS Releases", url: "https://www.bls.gov/feed/bls_latest.rss", tier: 1, tags: [money], access: free}
+  - {name: "BLS Releases", url: "https://www.bls.gov/feed/bls_latest.rss", tier: 1, tags: [money], access: free, official: true}
   # DEAD - {name: "IMF News", url: "https://www.imf.org/en/News/RSS?language=eng", tier: 1, tags: [money, world], access: free}
   # DEAD - {name: "World Bank", url: "https://www.worldbank.org/en/news/all?format=rss", tier: 1, tags: [money, world], access: free}
-  - {name: "ECB Press", url: "https://www.ecb.europa.eu/rss/press.html", tier: 1, tags: [money, world], access: free}
-  - {name: "Bank of England", url: "https://www.bankofengland.co.uk/rss/news", tier: 1, tags: [money, world], access: free}
+  - {name: "ECB Press", url: "https://www.ecb.europa.eu/rss/press.html", tier: 1, tags: [money, world], access: free, official: true}
+  - {name: "Bank of England", url: "https://www.bankofengland.co.uk/rss/news", tier: 1, tags: [money, world], access: free, official: true}
   - {name: "Naked Capitalism", url: "https://www.nakedcapitalism.com/feed", tier: 3, tags: [money, argument], access: free}
   # DEAD - {name: "Matt Levine / Bloomberg Opinion", url: "https://feeds.bloomberg.com/opinion/news.rss", tier: 3, tags: [money, argument], access: paywall}
 
@@ -359,10 +375,10 @@ feeds:
   - {name: "The Revelator", url: "https://therevelator.org/feed/", tier: 3, tags: [env], access: free}
   # DEAD - {name: "EPA Newsroom", url: "https://www.epa.gov/newsreleases/search/rss", tier: 1, tags: [env, uspol], access: free}
   # DEAD - {name: "NASA Earth", url: "https://www.nasa.gov/rss/dyn/earth.rss", tier: 1, tags: [env, sci], access: free}
-  - {name: "Copernicus / ESA", url: "https://www.esa.int/rssfeed/Our_Activities/Observing_the_Earth", tier: 1, tags: [env, sci], access: free}
+  - {name: "Copernicus / ESA", url: "https://www.esa.int/rssfeed/Our_Activities/Observing_the_Earth", tier: 1, tags: [env, sci], access: free, official: true}
   - {name: "Science Magazine", url: "https://www.science.org/rss/news_current.xml", tier: 2, tags: [sci], access: metered}
   - {name: "MIT Technology Review", url: "https://www.technologyreview.com/feed/", tier: 3, tags: [sci], access: metered}
   - {name: "404 Media", url: "https://www.404media.co/rss/", tier: 3, tags: [sci, justice], access: metered}
   - {name: "The Register", url: "https://www.theregister.com/headlines.atom", tier: 3, tags: [sci], access: free}
   - {name: "Krebs on Security", url: "https://krebsonsecurity.com/feed/", tier: 2, tags: [sci, justice], access: free}
-  - {name: "CISA Advisories", url: "https://www.cisa.gov/cybersecurity-advisories/all.xml", tier: 1, tags: [alert, sci], access: free}
+  - {name: "CISA Advisories", url: "https://www.cisa.gov/cybersecurity-advisories/all.xml", tier: 1, tags: [alert, sci], access: free, official: true}
