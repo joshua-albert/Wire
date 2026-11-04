@@ -18,6 +18,7 @@ from .verify import (classify_change, find_revision, independence,
 MAX_MEMBERS = 60
 MAX_HISTORY = 25
 MAX_PICKUP = 80
+MAX_OVERFLOW = 600
 
 
 # ------------------------------------------------- within-run clustering
@@ -91,7 +92,9 @@ def _new_thread(group: dict, tags: list[str]) -> dict:
 
 def _absorb(thread: dict, group: dict) -> list[dict]:
     """Fold this run's articles into the thread. Returns genuinely new members."""
-    known = {m["url"] for m in thread["members"]}
+    # Members are capped, so also remember URLs that were dropped by the cap.
+    # Without this, every article past the cap looked brand new on every run.
+    known = {m["url"] for m in thread["members"]} | set(thread.get("overflow", []))
     stamp = now_utc().isoformat()
     fresh = []
 
@@ -158,7 +161,11 @@ def _absorb(thread: dict, group: dict) -> list[dict]:
         thread["pickup"].append({"ts": stamp, "n": outlets})
         thread["pickup"] = thread["pickup"][-MAX_PICKUP:]
 
-    thread["members"] = sorted(thread["members"], key=lambda m: m["seen"])[:MAX_MEMBERS]
+    ordered = sorted(thread["members"], key=lambda m: m["seen"])
+    if len(ordered) > MAX_MEMBERS:
+        dropped = [m["url"] for m in ordered[MAX_MEMBERS:]]
+        thread["overflow"] = (thread.get("overflow", []) + dropped)[-MAX_OVERFLOW:]
+    thread["members"] = ordered[:MAX_MEMBERS]
     return fresh
 
 

@@ -1,20 +1,38 @@
 name: Update the wire
 
+# How this runs:
+# GitHub's own cron is best-effort and was firing only every few hours.
+# So each run stays alive for ~5 hours and updates the site every 15 minutes
+# itself, then starts the next run. The hourly cron is only a backup that
+# restarts the chain if it ever breaks.
+#
+# state.json and threads.json are NOT committed anymore (threads.json hit
+# 58 MB and pushes were being rejected). They live in the Actions cache.
+
 on:
   schedule:
-    - cron: "*/15 * * * *"   # every 15 minutes
+    - cron: "7 * * * *"      # backup starter, once an hour
   workflow_dispatch:          # plus a manual "Run workflow" button
 
 permissions:
   contents: write
+  actions: write              # lets a run start the next run
 
 concurrency:
   group: wire
   cancel-in-progress: false
 
+env:
+  EVERY_MINUTES: 15
+  RUN_FOR_MINUTES: 300        # stop starting new updates after 5 hours
+  # Last commit that still had the data files in git. Used once, to seed the
+  # cache, so no thread history or source scores are lost in the move.
+  SEED_COMMIT: b4afd0352b6cf06bbad968e79b644d920c43b2d2
+
 jobs:
   update:
     runs-on: ubuntu-latest
+    timeout-minutes: 345
     steps:
       - uses: actions/checkout@v4
 
@@ -25,7 +43,28 @@ jobs:
 
       - run: pip install -r requirements.txt
 
-      - name: Pull the feeds
+      - name: Restore saved state
+        id: state
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            state.json
+            threads.json
+          key: wire-state-${{ github.run_id }}
+          restore-keys: wire-state-
+
+      - name: Seed state from git (first run only)
+        if: steps.state.outputs.cache-matched-key == ''
+        run: |
+          if git fetch --depth=1 origin "$SEED_COMMIT" 2>/dev/null; then
+            git show FETCH_HEAD:state.json   > state.json   || true
+            git show FETCH_HEAD:threads.json > threads.json || true
+            echo "seeded from $SEED_COMMIT"
+          else
+            echo "no seed available, starting fresh"
+          fi
+
+      - name: Update every 15 minutes
         env:
           SMTP_HOST: ${{ secrets.SMTP_HOST }}
           SMTP_PORT: ${{ secrets.SMTP_PORT }}
@@ -36,12 +75,61 @@ jobs:
           SITE_URL:  ${{ secrets.SITE_URL }}
           DEEPL_API_KEY:      ${{ secrets.DEEPL_API_KEY }}
           LIBRETRANSLATE_URL: ${{ secrets.LIBRETRANSLATE_URL }}
-        run: python wire.py
-
-      - name: Commit the new front page
         run: |
           git config user.name  "the-wire-bot"
           git config user.email "bot@users.noreply.github.com"
-          git add docs/ state.json threads.json
-          git diff --staged --quiet || git commit -m "wire: $(date -u '+%Y-%m-%d %H:%M UTC')"
-          git push
+          start_sha=$(git rev-parse HEAD)
+          job_start=$(date +%s)
+          stop_at=$(( job_start + RUN_FOR_MINUTES * 60 ))
+          n=0
+          while :; do
+            n=$((n + 1))
+            tick=$(date +%s)
+            echo "::group::update $n at $(date -u '+%H:%M UTC')"
+
+            python wire.py || echo "wire.py failed this round; trying again next round"
+
+            git add -A docs/
+            if ! git diff --staged --quiet; then
+              git commit -q -m "wire: $(date -u '+%Y-%m-%d %H:%M UTC')"
+              pushed=no
+              for attempt in 1 2 3; do
+                git pull -q --rebase -X theirs origin main && git push -q origin HEAD:main && { pushed=yes; break; }
+                git rebase --abort 2>/dev/null || true
+                sleep 10
+              done
+              if [ "$pushed" = no ]; then
+                echo "push failed; dropping this round's page, next round rebuilds it"
+                git fetch -q origin main && git reset -q --hard origin/main
+              fi
+            fi
+            echo "::endgroup::"
+
+            # New code pushed to main? End now so the next run uses it.
+            git fetch -q origin main || true
+            if git diff --name-only "$start_sha" origin/main -- . ':!docs' | grep -q .; then
+              echo "code changed on main; handing off to a fresh run"
+              break
+            fi
+
+            next=$(( tick + EVERY_MINUTES * 60 ))
+            [ "$next" -ge "$stop_at" ] && break
+            wait_s=$(( next - $(date +%s) ))
+            [ "$wait_s" -gt 0 ] && sleep "$wait_s"
+          done
+          echo "finished after $n updates"
+
+      - name: Save state
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            state.json
+            threads.json
+          key: wire-state-${{ github.run_id }}-${{ github.run_attempt }}
+
+      - name: Start the next run
+        if: ${{ !cancelled() }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run update.yml --ref main -R "${{ github.repository }}"
