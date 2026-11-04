@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import html
 import json
+import re
 from datetime import timedelta
 from email.utils import format_datetime
 from zoneinfo import ZoneInfo
@@ -110,11 +111,14 @@ def _attrs(thread: dict) -> str:
 
 
 def clean_title(title: str, source: str) -> str:
-    """Search feeds tack " - Outlet" onto headlines. The outlet is shown already."""
+    """Search feeds tack " - Outlet" onto headlines; some feeds send paragraphs."""
     head, sep, tail = (title or "").rpartition(" - ")
     if sep and head and (tail.strip().lower() == (source or "").lower() or len(tail) <= 24
                          and "." in tail):
-        return head.strip()
+        title = head.strip()
+    title = re.sub(r"\s*(https?://\S+|\b[a-z0-9-]+\.[a-z]{2,6}/\S+)", "", title).strip()
+    if len(title) > 170:
+        title = title[:167].rsplit(" ", 1)[0].rstrip(",;:") + "…"
     return title
 
 

@@ -46,7 +46,6 @@ feeds:
   - {name: "BNO News on Bluesky",  url: "https://bsky.app/profile/bnonews.com/rss", tier: 3, tags: [world, alert], social: true, publisher: "BNO News"}
   - {name: "GNews: last hour, breaking", url: "https://news.google.com/rss/search?q=%22breaking%22+OR+%22just+in%22+OR+%22developing%22+when:1h&hl=en-US&gl=US&ceid=US:en", tier: 4, tags: [world]}
   - {name: "GNews: last hour, Philadelphia", url: "https://news.google.com/rss/search?q=Philadelphia+when:1h&hl=en-US&gl=US&ceid=US:en", tier: 4, tags: [philly]}
-  - {name: "NWS alerts, Philadelphia", url: "https://api.weather.gov/alerts/active.atom?point=39.9526,-75.1652", tier: 1, tags: [philly, env, alert], official: true}
 
   # ---------- WAR, CONFLICT, SECURITY ----------
   # DEAD - {name: "Kyiv Independent",     url: "https://kyivindependent.com/feed/", tier: 2, tags: [war, world]}

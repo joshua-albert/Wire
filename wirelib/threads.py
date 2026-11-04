@@ -121,6 +121,7 @@ def _absorb(thread: dict, group: dict) -> list[dict]:
             "lang": item.get("lang", "en"),
             "source": item["source"],
             "tier": item["tier"],
+            "social": item.get("social", False),
             "access": item.get("access", "free"),
             "published": item["published"],
             "seen": stamp,
@@ -158,7 +159,9 @@ def _absorb(thread: dict, group: dict) -> list[dict]:
     thread["updated"] = stamp
 
     # The most trusted, earliest article owns the headline.
-    best = min(thread["members"], key=lambda m: (m["tier"], m["published"]))
+    # A real headline beats a social post from the same newsroom.
+    best = min(thread["members"],
+               key=lambda m: (m.get("social", False), m["tier"], m["published"]))
     if best["title"] != thread["title"]:
         # Recorded as history, NOT as a correction. Swapping to a more
         # trusted outlet's wording is the thread reorganising itself; a

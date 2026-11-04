@@ -100,7 +100,7 @@ def collect(feeds: list[dict], state: dict) -> tuple[list[dict], dict]:
                 title = clean_text(entry.get("title", ""), 300)
                 # Social feeds (Bluesky profiles) have no titles, just the post.
                 if not title and feed.get("social"):
-                    title = clean_text(entry.get("summary", ""), 220)
+                    title = _post_headline(entry.get("summary", ""))
                 if not link or not title:
                     continue
                 if SOFT.search(title):
@@ -129,6 +129,7 @@ def collect(feeds: list[dict], state: dict) -> tuple[list[dict], dict]:
                     "feed": feed["name"],
                     "tier": int(feed.get("tier", 3)),
                     "official": bool(feed.get("official")),
+                    "social": bool(feed.get("social")),
                     "access": feed.get("access", "free"),
                     "tags": list(feed.get("tags", [])),
                     "published": _published(entry, canonical_url(link), undated, stamp),
@@ -147,3 +148,19 @@ def _published(entry, url: str, undated: dict, stamp: str) -> str:
     if when:
         return when.isoformat()
     return undated.setdefault(url, stamp)
+
+
+_LINK = _re.compile(r"(https?://\S+|\b[a-z0-9-]+\.[a-z]{2,6}/\S+)", _re.IGNORECASE)
+
+
+def _post_headline(text: str) -> str:
+    """A social post as a headline: links out, first sentence, sensible length."""
+    text = _LINK.sub("", clean_text(text, 600)).strip(" -:|")
+    text = _re.sub(r"\s{2,}", " ", text)
+    first = _re.split(r"(?<=[.!?])\s", text, maxsplit=1)[0]
+    if 40 <= len(first) <= 160:
+        return first.rstrip(".")
+    if len(text) <= 160:
+        return text
+    cut = text[:157].rsplit(" ", 1)[0]
+    return cut + "…"
