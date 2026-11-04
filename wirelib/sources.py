@@ -114,7 +114,9 @@ def collect(feeds: list[dict], state: dict) -> tuple[list[dict], dict]:
                 # name the publisher it belongs to and never counts twice.
                 publisher = feed.get("publisher") or feed["name"]
                 origin = entry.get("source")
-                if isinstance(origin, dict) and origin.get("title"):
+                if (isinstance(origin, dict) and origin.get("title")
+                        and not ("/" in origin["title"] and " " not in origin["title"])):
+                    # (Some feeds put a URL path like "taxonomy/term/2" here.)
                     publisher = clean_text(origin["title"], 60)
                 elif int(feed.get("tier", 3)) == 4 and " - " in title:
                     headline, _, tail = title.rpartition(" - ")

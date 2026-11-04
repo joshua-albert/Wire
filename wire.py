@@ -38,6 +38,8 @@ def main() -> int:
 
     site = cfg["site"]
     rules = cfg["scoring"]
+    th.prune_drift(store, state, float(rules.get("cluster_threshold", 0.42)),
+                   float(rules.get("anchor_threshold", 0.15)))
     threshold = float(rules.get("cluster_threshold", 0.42))
 
     # --- 1. pull
@@ -95,6 +97,7 @@ def main() -> int:
 
     # --- 5b. where each story is in its life
     official = stages.official_names(feeds)
+    stages.set_feeds(feeds)
     stages.annotate(live, official)
 
     # --- 6. publish

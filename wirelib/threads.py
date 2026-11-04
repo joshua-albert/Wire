@@ -365,3 +365,32 @@ def reliability(stat: dict) -> float:
 def avg_lead_minutes(stat: dict) -> float:
     count = stat.get("lead_count", 0)
     return stat["lead_minutes"] / count if count else 0.0
+
+
+def prune_drift(threads: dict, state: dict, threshold: float, secondary: float) -> None:
+    """
+    One-time cleanup. Before the stricter matching rule, common words chained
+    unrelated reports into big threads (a crypto hack thread ended up full of
+    midterm coverage). Drop every member that wouldn't match the thread's
+    original story under today's rule.
+    """
+    if state.get("pruned_v3"):
+        return
+    terms, total = state["terms"], state.get("docs_counted", 0)
+    dropped = 0
+    for thread in threads.values():
+        lead = set(thread.get("lead_tokens") or thread["tokens"])
+        keep = []
+        for m in thread["members"]:
+            words = set(content_words(m["title"]))
+            if m["url"] == thread["url"] or related(words, lead, terms, total, threshold, secondary):
+                keep.append(m)
+        dropped += len(thread["members"]) - len(keep)
+        thread["members"] = keep or thread["members"][:1]
+        if thread["url"] not in {m["url"] for m in thread["members"]}:
+            best = min(thread["members"],
+                       key=lambda m: (m.get("social", False), m["tier"], m["published"]))
+            thread.update(title=best["title"], url=best["url"], source=best["source"],
+                          tier=best["tier"])
+    state["pruned_v3"] = True
+    print(f"cleanup: removed {dropped} mismatched reports from old threads")

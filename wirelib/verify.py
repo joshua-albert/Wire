@@ -328,9 +328,50 @@ def check_link_rot(threads: list[dict], limit: int = 25, min_age_hours: float = 
     return found
 
 
+# A number moving only matters when it counts something human: a toll, the
+# injured, arrests, the displaced. Market tickers ("Dollar index 96 to 97")
+# and sentencing press releases move numbers constantly and are not news
+# being revised.
+COUNTS = re.compile(
+    r"\b(killed|kills|dead|deaths?|died|toll|injur(ed|ies)|wounded|missing|casualt(y|ies)"
+    r"|victims?|arrest(ed|s)|detained|evacuat(ed|ions?)|displaced|homeless|hospitali[sz]ed"
+    r"|rescued|trapped|homes|buildings|people|civilians|soldiers|cases)\b", re.IGNORECASE)
+
+
+_COUNTED = re.compile(
+    r"(\b\d[\d,]*\+?)\s+(?:more\s+|other\s+|people\s+)?(killed|dead|deaths|died|injured|wounded"
+    r"|missing|casualties|victims|arrested|detained|evacuated|displaced|hospitali[sz]ed|rescued"
+    r"|trapped|people|civilians|soldiers|cases)\b"
+    r"|\b(?:toll|kills|killing|killed|deaths? toll)\s+(?:\w+\s+){0,3}?(?:to\s+|at\s+)?(\d[\d,]*)",
+    re.IGNORECASE)
+
+
+def _counted(text: str) -> tuple:
+    found = []
+    for m in _COUNTED.finditer(text or ""):
+        if re.search(r"\d+-(year|month|week|day)", text[max(0, m.start() - 2):m.end() + 12]):
+            continue
+        raw = m.group(1) or m.group(3)
+        try:
+            found.append(int(raw.replace(",", "").rstrip("+")))
+        except (TypeError, ValueError):
+            pass
+    return tuple(sorted(found))
+
+
+def meaningful(change: dict) -> bool:
+    kind = change.get("kind")
+    if kind in ("CORRECTION", "PULLED"):
+        return True
+    if kind in ("REVISED UP", "REVISED DOWN"):
+        # The number that moved must be the count itself ("12 killed",
+        # "death toll rises to 30"), not an age, a date, or a street number.
+        return bool(_counted(change.get("from", "")) and _counted(change.get("to", ""))
+                    and _counted(change.get("from", "")) != _counted(change.get("to", "")))
+    return kind in ("HEDGED", "FIRMED UP")
+
+
 def latest_flag(thread: dict) -> dict | None:
     changes = thread.get("changes") or []
-    serious = [c for c in changes
-               if c["kind"] in ("CORRECTION", "PULLED", "HEDGED", "FIRMED UP",
-                                "REVISED UP", "REVISED DOWN")]
+    serious = [c for c in changes if meaningful(c)]
     return serious[-1] if serious else None

@@ -12,10 +12,10 @@ from zoneinfo import ZoneInfo
 from .assets import CSS, FONTS, JS
 from .beats import anomalies, entity_index, slug
 from .common import DOCS, hours_since, now_utc, parse_ts
-from .stages import (CHANGED, CONFIRMED, SPOTTED, SPREADING, annotate, latest_activity,
-                     newest_first, official_names)
+from .stages import (CHANGED, CONFIRMED, SPOTTED, SPREADING, TOPIC_WORDS, annotate,
+                     latest_activity, newest_first, official_names, set_feeds, topics_for)
 from .threads import avg_lead_minutes, reliability
-from .verify import diff_words, independence_groups, latest_flag
+from .verify import diff_words, independence_groups, latest_flag, meaningful
 
 BANNER = ""
 LIVE_ATTR = ' data-live="1"'
@@ -106,7 +106,8 @@ def _attrs(thread: dict) -> str:
     blob = " ".join([thread["title"], thread["source"]]
                     + thread.get("countries", []) + thread.get("entities", [])
                     + [m["source"] for m in thread["members"][:12]]).lower()
-    return (f'data-id="{thread["id"]}" data-tags="{esc(" ".join(thread.get("tags", [])))}" '
+    return (f'data-id="{thread["id"]}" '
+            f'data-tags="{esc(" ".join(thread["_topics"] if "_topics" in thread else thread.get("tags", [])))}" '
             f'data-q="{esc(blob)}"')
 
 
@@ -157,7 +158,8 @@ def log_row(thread: dict, prefix: str = "") -> str:
                   f'{esc(clean_title(newest["title"], newest["source"]))}</a>'
                   f'<span class="since-first">Developing since {_time(thread["_first"], "clock")}'
                   f'</span></div>')
-    return (f'<li {_attrs(thread)} data-first="{esc(thread["_last"])}">'
+    flag = "" if thread.get("_notable", True) else ' data-notable="0"'
+    return (f'<li {_attrs(thread)}{flag} data-first="{esc(thread["_last"])}">'
             f'{_time(thread["_last"])}<div>{_headline(thread)}{update}'
             f'<div class="by">{"".join(bits)}</div></div></li>')
 
@@ -193,6 +195,18 @@ def _fact_changed(t: dict) -> str:
 def _fact_abroad(t: dict) -> str:
     return (f'<b>{_langs(t).replace("Translated from ", "")} press</b>, '
             f'not yet in major English-language outlets')
+
+
+def _dedupe(threads: list[dict]) -> list[dict]:
+    """Two threads with the same headline are one story to a reader."""
+    seen, out = set(), []
+    for t in threads:
+        key = re.sub(r"\W+", " ", t["title"].lower()).strip()
+        if key in seen:
+            continue
+        seen.add(key)
+        out.append(t)
+    return out
 
 
 def lane(key: str, title: str, why: str, rows: list[str], cap: int, empty: str,
@@ -309,7 +323,25 @@ def render_index(threads: list[dict], cfg: dict, errors: dict, feed_count: int,
     lead = pick_lead(threads, cfg)
     rest = [t for t in threads if t is not lead]
 
-    latest = _latest([t for t in latest_activity(threads) if hours_since(t["_last"]) <= 24])
+    pool = [t for t in latest_activity(threads) if hours_since(t["_last"]) <= 24]
+    notable = _latest(pool)
+    # Each topic tab gets its own newest stories, not just whatever made the
+    # front page cut. Single-source stories count here: on the Money tab, a
+    # lone CNBC piece on the open is exactly what you want to see.
+    chosen = {t["id"] for t in notable}
+    for section in cfg["sections"]:
+        tag = section["tags"][0]
+        picked = 0
+        for t in pool:
+            if tag in t["_topics"]:
+                chosen.add(t["id"])
+                picked += 1
+                if picked >= PER_TOPIC:
+                    break
+    keep_notable = {t["id"] for t in notable}
+    for t in pool:
+        t["_notable"] = t["id"] in keep_notable
+    latest = [t for t in pool if t["id"] in chosen]
     spreading = sorted([t for t in rest if t["_stage"] == SPREADING],
                        key=lambda t: t["_velocity"], reverse=True)[:40]
     confirmed = sorted([t for t in rest if t["_stage"] == CONFIRMED
@@ -325,6 +357,9 @@ def render_index(threads: list[dict], cfg: dict, errors: dict, feed_count: int,
     LINKED.clear()
     LINKED.update(t["id"] for group in (latest, spreading, confirmed, changed, abroad)
                   for t in group)
+    spreading, confirmed, changed, abroad = (_dedupe(x) for x in
+                                             (spreading, confirmed, changed, abroad))
+    latest = _dedupe(latest)
     if lead:
         LINKED.add(lead["id"])
 
@@ -342,7 +377,7 @@ def render_index(threads: list[dict], cfg: dict, errors: dict, feed_count: int,
                       if curve else "")
         body.append(
             f'<article class="lead{"" if curve else " solo"}"><div><ol style="list-style:none;margin:0;padding:0">'
-            f'<li {_attrs(lead)}>{stage_mark(lead)}{_headline(lead)}</li></ol>'
+            f'<li {_attrs(lead)} data-lead="1">{stage_mark(lead)}{_headline(lead)}</li></ol>'
             f'<p>{dek} <a href="t/{lead["id"]}.html">See how it unfolded</a>.</p></div>'
             f'{curve_html}</article>')
 
@@ -373,7 +408,8 @@ def render_index(threads: list[dict], cfg: dict, errors: dict, feed_count: int,
     body.append(f'<div class="desk"><div class="nowcol">{now_lane}</div>'
                 f'<div class="latest">{log}</div>'
                 f'<aside class="rail">{rail}</aside></div>'
-                f'<script>window.WIRE_LIVE={json.dumps(LIVE_ACCOUNTS)};</script>')
+                f'<script>window.WIRE_LIVE={json.dumps(LIVE_ACCOUNTS)};'
+                f'window.WIRE_TOPICS={json.dumps(TOPIC_WORDS)};</script>')
 
     total = feed_count + len(errors)
     body.append(_footer(cfg, f'{len(threads)} stories tracked from {feed_count} of {total} '
@@ -398,7 +434,8 @@ def _events(thread: dict, aggregator_tiers: set[int]) -> list[dict]:
         events.append({"ts": first["seen"], "kind": "report", "what": what,
                        "member": first, "also": others, "indep": True})
     for change in thread.get("changes", []):
-        events.append({"ts": change["ts"], "kind": "change", "change": change})
+        if meaningful(change):
+            events.append({"ts": change["ts"], "kind": "change", "change": change})
     return sorted(events, key=lambda e: e["ts"])
 
 
@@ -586,6 +623,7 @@ def render_rss(threads: list[dict], cfg: dict, site_url: str) -> str:
 
 
 OFFICIAL: set[str] = set()
+PER_TOPIC = 50
 LIVE_ACCOUNTS: list[dict] = []
 LATEST_MAX = 220
 LINKED: set[str] = set()
@@ -599,12 +637,13 @@ def write_all(threads: list[dict], cfg: dict, errors: dict, feeds: list[dict],
     except Exception:  # noqa: BLE001
         pass
     OFFICIAL = official_names(feeds)
+    set_feeds(feeds)
     LIVE_ACCOUNTS[:] = [
         {"handle": f["url"].split("/profile/")[1].split("/")[0],
          "name": f.get("publisher") or f["name"], "tags": f.get("tags", [])}
         for f in feeds if f.get("social") and "/profile/" in f["url"]
         and f["name"] not in errors]
-    if any("_stage" not in t for t in threads):
+    if any("_topics" not in t for t in threads):
         annotate(threads, OFFICIAL)
     notice = cfg["site"].get("banner", "")
     BANNER = f'<div class="banner">{esc(notice)}</div>' if notice else ""
