@@ -98,14 +98,29 @@ a:hover{text-decoration:underline;text-underline-offset:3px;text-decoration-thic
 .lead .hl{max-width:none}}
 
 /* ---------- desk ---------- */
-.desk{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(0,1fr);gap:48px;
-  padding:8px 0 40px;grid-template-areas:"latest rail"}
-.latest{grid-area:latest}.rail{grid-area:rail}
-@media (max-width:900px){.desk{grid-template-columns:1fr;gap:8px;
-  grid-template-areas:"rail" "latest"}}
+.desk{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(0,1fr);column-gap:48px;
+  padding:8px 0 40px;grid-template-areas:"now rail" "latest rail";align-items:start}
+.nowcol{grid-area:now}.latest{grid-area:latest}.rail{grid-area:rail}
+@media (max-width:900px){.desk{grid-template-columns:1fr;
+  grid-template-areas:"now" "rail" "latest"}}
+/* right now: live posts pulled in the browser */
+.nowlist li{display:grid;grid-template-columns:62px minmax(0,1fr);gap:14px;padding:9px 0;
+  border-bottom:1px solid var(--rule)}
+.nowlist li.empty{display:block;color:var(--ink-3);font-size:14px}
+.nowlist .t{font-size:13px;color:var(--spreading);font-weight:600;padding-top:2px}
+.nowlist .t.old{color:var(--ink-3);font-weight:400}
+.nowlist a.post{font:500 15px/1.35 var(--serif);color:var(--ink)}
+.nowlist .who{font-size:12.5px;color:var(--ink-2);margin-top:2px}
+.nowlist .more-now{display:block;border:0;padding:10px 0 0}
+.nowlist .more-now button{font:500 13px var(--sans);background:none;border:0;padding:0;
+  color:var(--ink-2);cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+.upd{margin-top:6px;padding-left:10px;border-left:2px solid var(--spreading);font-size:14px}
+.upd span{display:block;font-size:12px;color:var(--ink-3)}
+.upd a{font:500 15px/1.35 var(--serif);color:var(--ink)}
+.upd .since-first{margin-top:2px}
 .lane{padding-top:22px}
-.lane>header{display:flex;align-items:baseline;gap:10px;margin-bottom:4px}
-.lane h2{font:700 17px/1.2 var(--sans);letter-spacing:-.01em;margin:0}
+.lane>header{display:flex;align-items:baseline;flex-wrap:wrap;gap:2px 10px;margin-bottom:4px}
+.lane h2{font:700 17px/1.2 var(--sans);letter-spacing:-.01em;margin:0;white-space:nowrap}
 .lane .why{font-size:13px;color:var(--ink-3)}
 .lane .empty{color:var(--ink-3);font-size:14px;padding:12px 0}
 .lane ol{list-style:none;margin:0;padding:0}
@@ -265,7 +280,7 @@ JS = r"""
      if(lane.dataset.optional&&topic!=='all'&&!query)lane.hidden=shown===0;
    })}
  tabs.forEach(function(b){b.addEventListener('click',function(){
-   topic=b.dataset.topic;set('wire.topic',topic);apply()})});
+   topic=b.dataset.topic;set('wire.topic',topic);apply();if(window.wireNowDraw)window.wireNowDraw()})});
  var q=document.getElementById('q');
  if(q){q.addEventListener('input',function(){query=q.value.trim().toLowerCase();apply()});
    document.addEventListener('keydown',function(e){
@@ -282,6 +297,45 @@ JS = r"""
  if(th)th.addEventListener('click',function(){
    var dark=root.getAttribute('data-theme')==='dark'||(!root.getAttribute('data-theme')&&matchMedia('(prefers-color-scheme: dark)').matches);
    var next=dark?'light':'dark';root.setAttribute('data-theme',next);set('wire.theme',next)});
+
+ // ---- right now: newsroom posts fetched live from Bluesky, every minute
+ var nowList=document.getElementById('nowlist');
+ if(nowList&&window.WIRE_LIVE&&window.fetch){
+   var accts=window.WIRE_LIVE, posts={}, expanded=false, reached=0;
+   function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+   function clean(t){t=t.replace(/(https?:\/\/\S+|\b[a-z0-9-]+\.[a-z]{2,6}\/\S+)/gi,'').replace(/\s{2,}/g,' ').trim();
+     return t.length>220?t.slice(0,217).replace(/\s\S*$/,'')+'…':t}
+   function pull(a){
+     return fetch('https://public.api.bsky.app/xrpc/app.bsky.feed.getAuthorFeed?actor='+encodeURIComponent(a.handle)+'&limit=15&filter=posts_no_replies')
+      .then(function(r){if(r.ok)reached++;return r.ok?r.json():{feed:[]}}).then(function(j){
+        (j.feed||[]).forEach(function(it){
+          if(it.reason)return; var p=it.post||{}, rec=p.record||{};
+          var text=clean(rec.text||''); if(text.length<25)return;
+          var rkey=(p.uri||'').split('/').pop();
+          var ext=p.embed&&p.embed.external&&p.embed.external.uri;
+          posts[p.uri]={t:Date.parse(rec.createdAt||p.indexedAt), text:text, who:a.name, tags:a.tags||[],
+            url:ext||('https://bsky.app/profile/'+a.handle+'/post/'+rkey)};
+        })}).catch(function(){})}
+   function draw(){
+     var cut=Date.now()-3*3600000, list=Object.keys(posts).map(function(k){return posts[k]})
+       .filter(function(p){return p.t>cut&&p.t<Date.now()+120000})
+       .filter(function(p){return topic==='all'||p.tags.indexOf(topic)>-1})
+       .sort(function(a,b){return b.t-a.t});
+     var few=window.innerWidth<700?5:8, show=expanded?list.slice(0,40):list.slice(0,few);
+     if(!reached){nowList.innerHTML='<li class="empty">Couldn\'t reach the newsroom accounts just now. Trying again every minute.</li>';return}
+     if(!list.length){nowList.innerHTML='<li class="empty">No newsroom posts in the last three hours'+(topic!=='all'?' for this topic':'')+'.</li>';return}
+     nowList.innerHTML=show.map(function(p){var m=Math.round((Date.now()-p.t)/60000);
+       return '<li><span class="t'+(m>30?' old':'')+'">'+(m<1?'now':m<60?m+' min':Math.floor(m/60)+' hr')+'</span><div>'
+        +'<a class="post" href="'+esc(p.url)+'" target="_blank" rel="noopener">'+esc(p.text)+'</a>'
+        +'<div class="who">'+esc(p.who)+'</div></div></li>'}).join('')
+       +(list.length>few?'<li class="more-now"><button type="button">'+(expanded?'Show fewer':'Show '+Math.min(list.length,40)+' posts')+'</button></li>':'');
+     var b=nowList.querySelector('.more-now button'); if(b)b.onclick=function(){expanded=!expanded;draw()};
+   }
+   function refresh(){Promise.all(accts.map(pull)).then(draw)}
+   refresh(); setInterval(function(){if(!document.hidden)refresh()},60000);
+   document.addEventListener('visibilitychange',function(){if(!document.hidden)refresh()});
+   window.wireNowDraw=draw;
+ }
 
  // ---- quietly pick up new rebuilds (never while you're typing or mid-scroll)
  var loaded=Date.now(), busy=0;

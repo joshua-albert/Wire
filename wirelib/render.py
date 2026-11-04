@@ -12,8 +12,8 @@ from zoneinfo import ZoneInfo
 from .assets import CSS, FONTS, JS
 from .beats import anomalies, entity_index, slug
 from .common import DOCS, hours_since, now_utc, parse_ts
-from .stages import (CHANGED, CONFIRMED, SPOTTED, SPREADING, annotate, newest_first,
-                     official_names)
+from .stages import (CHANGED, CONFIRMED, SPOTTED, SPREADING, annotate, latest_activity,
+                     newest_first, official_names)
 from .threads import avg_lead_minutes, reliability
 from .verify import diff_words, independence_groups, latest_flag
 
@@ -135,7 +135,13 @@ def _orig(thread: dict) -> str:
 
 
 def log_row(thread: dict, prefix: str = "") -> str:
-    """One line of the Latest log: when, what, who, and how sure."""
+    """
+    One line of the Latest log. Timed by the newest report, so a fresh
+    development on last night's story lands at the top, not buried.
+    """
+    newest = thread.get("_newest")
+    developing = (newest is not None and newest["url"] != thread["url"]
+                  and (parse_ts(thread["_last"]) - parse_ts(thread["_first"])).total_seconds() > 1200)
     bits = [stage_mark(thread), f'<span class="src">{esc(thread["source"])}</span>']
     if _others(thread):
         bits.append(f'<span>{_others(thread)}</span>')
@@ -144,8 +150,15 @@ def log_row(thread: dict, prefix: str = "") -> str:
     if thread.get("access") in ("paywall", "metered"):
         bits.append('<span class="lang">Paywall</span>')
     bits.append(f'<a class="more" href="{prefix}t/{thread["id"]}.html">How it unfolded</a>')
-    return (f'<li {_attrs(thread)} data-first="{esc(thread["_first"])}">'
-            f'{_time(thread["_first"])}<div>{_headline(thread)}'
+    update = ""
+    if developing:
+        update = (f'<div class="upd"><span>Latest from {esc(newest["source"])}</span> '
+                  f'<a href="{esc(newest["url"])}" target="_blank" rel="noopener">'
+                  f'{esc(clean_title(newest["title"], newest["source"]))}</a>'
+                  f'<span class="since-first">Developing since {_time(thread["_first"], "clock")}'
+                  f'</span></div>')
+    return (f'<li {_attrs(thread)} data-first="{esc(thread["_last"])}">'
+            f'{_time(thread["_last"])}<div>{_headline(thread)}{update}'
             f'<div class="by">{"".join(bits)}</div></div></li>')
 
 
@@ -296,7 +309,7 @@ def render_index(threads: list[dict], cfg: dict, errors: dict, feed_count: int,
     lead = pick_lead(threads, cfg)
     rest = [t for t in threads if t is not lead]
 
-    latest = _latest([t for t in newest_first(threads) if hours_since(t["_first"]) <= 24])
+    latest = _latest([t for t in latest_activity(threads) if hours_since(t["_last"]) <= 24])
     spreading = sorted([t for t in rest if t["_stage"] == SPREADING],
                        key=lambda t: t["_velocity"], reverse=True)[:40]
     confirmed = sorted([t for t in rest if t["_stage"] == CONFIRMED
@@ -347,16 +360,24 @@ def render_index(threads: list[dict], cfg: dict, errors: dict, feed_count: int,
              [rail_row(t, _fact_abroad(t)) for t in abroad], 5,
              "Nothing from local foreign press right now.", optional=True),
     ])
-    log = lane("latest", "Latest", "Newest first, as each story lands",
+    log = lane("latest", "Latest", "Newest development first, rebuilt every few minutes",
                [log_row(t) for t in latest], 60,
                "No new stories in the last 24 hours.", ordered=True)
 
-    body.append(f'<div class="desk"><div class="latest">{log}</div>'
-                f'<aside class="rail">{rail}</aside></div>')
+    now_lane = (
+        '<section class="lane now" id="now" aria-live="polite">'
+        '<header><h2>Right now</h2><span class="why" id="now-why">Straight from newsroom '
+        'accounts, refreshed every minute</span></header>'
+        '<ol class="nowlist" id="nowlist"><li class="empty">Loading the last hour of posts…</li></ol>'
+        '</section>')
+    body.append(f'<div class="desk"><div class="nowcol">{now_lane}</div>'
+                f'<div class="latest">{log}</div>'
+                f'<aside class="rail">{rail}</aside></div>'
+                f'<script>window.WIRE_LIVE={json.dumps(LIVE_ACCOUNTS)};</script>')
 
     total = feed_count + len(errors)
     body.append(_footer(cfg, f'{len(threads)} stories tracked from {feed_count} of {total} '
-                             f'sources, checked every 15 minutes.'))
+                             f'sources, checked every 7 minutes.'))
     body.append("</div>")
     return _shell("The Wire", "".join(body), live=True)
 
@@ -565,6 +586,7 @@ def render_rss(threads: list[dict], cfg: dict, site_url: str) -> str:
 
 
 OFFICIAL: set[str] = set()
+LIVE_ACCOUNTS: list[dict] = []
 LATEST_MAX = 220
 LINKED: set[str] = set()
 
@@ -577,6 +599,11 @@ def write_all(threads: list[dict], cfg: dict, errors: dict, feeds: list[dict],
     except Exception:  # noqa: BLE001
         pass
     OFFICIAL = official_names(feeds)
+    LIVE_ACCOUNTS[:] = [
+        {"handle": f["url"].split("/profile/")[1].split("/")[0],
+         "name": f.get("publisher") or f["name"], "tags": f.get("tags", [])}
+        for f in feeds if f.get("social") and "/profile/" in f["url"]
+        and f["name"] not in errors]
     if any("_stage" not in t for t in threads):
         annotate(threads, OFFICIAL)
     notice = cfg["site"].get("banner", "")

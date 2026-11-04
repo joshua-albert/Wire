@@ -172,7 +172,8 @@ def _absorb(thread: dict, group: dict) -> list[dict]:
         thread["history"] = thread["history"][-MAX_HISTORY:]
         thread.update(title=best["title"], url=best["url"], source=best["source"],
                       tier=best["tier"], access=best.get("access", "free"))
-        thread["lead_tokens"] = sorted(content_words(best["title"]))[:40]
+        # Matching stays anchored to the story the thread started as. Letting
+        # it follow each new headline let threads drift from topic to topic.
 
     # Record the pickup curve: how many distinct outlets, and when.
     outlets = len({m["source"] for m in thread["members"]})

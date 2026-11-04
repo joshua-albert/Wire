@@ -23,7 +23,7 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  EVERY_MINUTES: 15
+  EVERY_MINUTES: 7          # Pages allows ~10 rebuilds an hour from a branch
   RUN_FOR_MINUTES: 300        # stop starting new updates after 5 hours
   # Last commit that still had the data files in git. Used once, to seed the
   # cache, so no thread history or source scores are lost in the move.
@@ -64,7 +64,7 @@ jobs:
             echo "no seed available, starting fresh"
           fi
 
-      - name: Update every 15 minutes
+      - name: Update every few minutes
         env:
           SMTP_HOST: ${{ secrets.SMTP_HOST }}
           SMTP_PORT: ${{ secrets.SMTP_PORT }}

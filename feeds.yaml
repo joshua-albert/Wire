@@ -44,6 +44,17 @@ feeds:
   - {name: "WHYY on Bluesky",      url: "https://bsky.app/profile/whyy.org/rss", tier: 2, tags: [philly], social: true, publisher: "WHYY"}
   - {name: "Factal on Bluesky",    url: "https://bsky.app/profile/factal.com/rss", tier: 3, tags: [world, alert], social: true, publisher: "Factal"}
   - {name: "BNO News on Bluesky",  url: "https://bsky.app/profile/bnonews.com/rss", tier: 3, tags: [world, alert], social: true, publisher: "BNO News"}
+  - {name: "NYT on Bluesky",       url: "https://bsky.app/profile/nytimes.com/rss", tier: 2, tags: [world, uspol], social: true, publisher: "NYT Home"}
+  - {name: "WaPo on Bluesky",      url: "https://bsky.app/profile/washingtonpost.com/rss", tier: 2, tags: [world, uspol], social: true, publisher: "Washington Post"}
+  - {name: "CNN on Bluesky",       url: "https://bsky.app/profile/cnn.com/rss", tier: 2, tags: [world, uspol], social: true, publisher: "CNN Top"}
+  - {name: "Guardian on Bluesky",  url: "https://bsky.app/profile/theguardian.com/rss", tier: 2, tags: [world], social: true, publisher: "Guardian World"}
+  - {name: "Politico on Bluesky",  url: "https://bsky.app/profile/politico.com/rss", tier: 2, tags: [uspol, elections], social: true, publisher: "Politico"}
+  - {name: "Axios on Bluesky",     url: "https://bsky.app/profile/axios.com/rss", tier: 2, tags: [uspol], social: true, publisher: "Axios"}
+  - {name: "The Hill on Bluesky",  url: "https://bsky.app/profile/thehill.com/rss", tier: 2, tags: [uspol], social: true, publisher: "The Hill"}
+  - {name: "NBC News on Bluesky",  url: "https://bsky.app/profile/nbcnews.com/rss", tier: 2, tags: [world, uspol], social: true, publisher: "NBC News"}
+  - {name: "CBS News on Bluesky",  url: "https://bsky.app/profile/cbsnews.com/rss", tier: 2, tags: [world, uspol], social: true, publisher: "CBS News"}
+  - {name: "Bloomberg on Bluesky", url: "https://bsky.app/profile/bloomberg.com/rss", tier: 2, tags: [money, world], social: true, publisher: "Bloomberg"}
+  - {name: "GNews: last hour, election results", url: "https://news.google.com/rss/search?q=%28election+OR+wins+OR+concedes+OR+%22projected+winner%22+OR+%22race+call%22%29+when:1h&hl=en-US&gl=US&ceid=US:en", tier: 4, tags: [elections, uspol]}
   - {name: "GNews: last hour, breaking", url: "https://news.google.com/rss/search?q=%22breaking%22+OR+%22just+in%22+OR+%22developing%22+when:1h&hl=en-US&gl=US&ceid=US:en", tier: 4, tags: [world]}
   - {name: "GNews: last hour, Philadelphia", url: "https://news.google.com/rss/search?q=Philadelphia+when:1h&hl=en-US&gl=US&ceid=US:en", tier: 4, tags: [philly]}
 

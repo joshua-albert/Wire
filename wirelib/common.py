@@ -187,6 +187,13 @@ def related(a: set, b: set, term_counts: dict, total_docs: int,
     if min(len(a), len(b)) >= 6 and len(shared) < 3:
         return False
 
+    # Unless they share a lot of words, two headlines must share at least one
+    # genuinely rare word (a name, a place) to be one story. Common words like
+    # "police", "drones", "life" were chaining unrelated stories together.
+    if len(shared) < 4 and total_docs >= ANCHOR_MIN_CORPUS and not anchors(
+            a, b, term_counts, total_docs, rarity=0.55):
+        return False
+
     score = overlap(a, b, term_counts, total_docs)
     if score >= primary:
         return True

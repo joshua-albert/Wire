@@ -19,7 +19,7 @@ from __future__ import annotations
 
 from datetime import timedelta
 
-from .common import hours_since, parse_ts
+from .common import content_words, hours_since, parse_ts
 
 SPOTTED, SPREADING, CONFIRMED, CHANGED = "spotted", "spreading", "confirmed", "changed"
 RANK = {SPOTTED: 0, SPREADING: 1, CONFIRMED: 2, CHANGED: 3}
@@ -35,32 +35,58 @@ def official_names(feeds: list[dict]) -> set[str]:
     return {f["name"] for f in feeds if f.get("official")}
 
 
+def report_time(member: dict):
+    """
+    When this report actually went out: the outlet's own timestamp, as long
+    as it isn't in the future or wildly old. Falls back to when we saw it.
+    (Using "when we saw it" alone made stories published overnight look like
+    this morning's news after any gap in updates.)
+    """
+    seen = parse_ts(member["seen"])
+    try:
+        pub = parse_ts(member["published"])
+    except (KeyError, ValueError, TypeError):
+        return seen
+    if seen - timedelta(hours=48) <= pub <= seen + timedelta(minutes=5):
+        return min(pub, seen)
+    return seen
+
+
 def first_seen(thread: dict) -> str:
+    times = [report_time(m) for m in thread.get("members", []) if m.get("seen")]
+    return min(times).isoformat() if times else thread["created"]
+
+
+def on_story(member: dict, thread: dict) -> bool:
     """
-    When the story first went out. The outlet's own timestamp where it's
-    believable (we check feeds every 15 minutes, so "published" can be a few
-    minutes earlier than when we saw it), otherwise when we first saw it.
+    Does this report plainly share the thread's subject? A guard for what we
+    show as "the latest" on a story: if the newest report doesn't share real
+    words with the headline, we don't present it as an update to it.
     """
-    best = None
-    for m in thread.get("members", []):
-        if not m.get("seen"):
-            continue
-        seen = parse_ts(m["seen"])
-        when = seen
-        try:
-            pub = parse_ts(m["published"])
-            if seen - timedelta(hours=3) <= pub <= seen:
-                when = pub
-        except (KeyError, ValueError, TypeError):
-            pass
-        if best is None or when < best:
-            best = when
-    return best.isoformat() if best else thread["created"]
+    if member["url"] == thread["url"]:
+        return True
+    a = set(content_words(member.get("title", "")))
+    b = set(content_words(thread["title"])) | set(thread.get("lead_tokens") or [])
+    if not a or not b:
+        return False
+    shared = len(a & b)
+    return shared >= 3 or (shared >= 2 and shared / min(len(a), len(b)) >= 0.5)
+
+
+def _core(thread: dict) -> list[dict]:
+    return [m for m in thread.get("members", []) if m.get("seen") and on_story(m, thread)]
+
+
+def newest_report(thread: dict) -> dict | None:
+    """The most recent on-story report, skipping search-aggregator copies."""
+    core = _core(thread)
+    members = [m for m in core if m.get("tier", 3) < 4] or core
+    return max(members, key=report_time) if members else None
 
 
 def last_report(thread: dict) -> str:
-    seen = [m["seen"] for m in thread.get("members", []) if m.get("seen")]
-    return max(seen) if seen else thread["updated"]
+    times = [report_time(m) for m in _core(thread)]
+    return max(times).isoformat() if times else first_seen(thread)
 
 
 def is_official(thread: dict, official: set[str]) -> bool:
@@ -106,6 +132,7 @@ def annotate(threads: list[dict], official: set[str]) -> None:
         thread["_first"] = first_seen(thread)
         thread["_last"] = last_report(thread)
         thread["_abroad"] = abroad_first(thread)
+        thread["_newest"] = newest_report(thread)
 
 
 def minutes_since(stamp: str) -> float:
@@ -114,3 +141,8 @@ def minutes_since(stamp: str) -> float:
 
 def newest_first(threads: list[dict]) -> list[dict]:
     return sorted(threads, key=lambda t: parse_ts(t["_first"]), reverse=True)
+
+
+def latest_activity(threads: list[dict]) -> list[dict]:
+    """Newest development first: a new report on an old story counts as new."""
+    return sorted(threads, key=lambda t: parse_ts(t["_last"]), reverse=True)
