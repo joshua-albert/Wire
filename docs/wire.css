@@ -88,14 +88,29 @@ a:hover{text-decoration:underline;text-underline-offset:3px;text-decoration-thic
 .lead .hl{max-width:none}}
 
 /* ---------- desk ---------- */
-.desk{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(0,1fr);gap:48px;
-  padding:8px 0 40px;grid-template-areas:"latest rail"}
-.latest{grid-area:latest}.rail{grid-area:rail}
-@media (max-width:900px){.desk{grid-template-columns:1fr;gap:8px;
-  grid-template-areas:"rail" "latest"}}
+.desk{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(0,1fr);column-gap:48px;
+  padding:8px 0 40px;grid-template-areas:"now rail" "latest rail";align-items:start}
+.nowcol{grid-area:now}.latest{grid-area:latest}.rail{grid-area:rail}
+@media (max-width:900px){.desk{grid-template-columns:1fr;
+  grid-template-areas:"now" "rail" "latest"}}
+/* right now: live posts pulled in the browser */
+.nowlist li{display:grid;grid-template-columns:62px minmax(0,1fr);gap:14px;padding:9px 0;
+  border-bottom:1px solid var(--rule)}
+.nowlist li.empty{display:block;color:var(--ink-3);font-size:14px}
+.nowlist .t{font-size:13px;color:var(--spreading);font-weight:600;padding-top:2px}
+.nowlist .t.old{color:var(--ink-3);font-weight:400}
+.nowlist a.post{font:500 15px/1.35 var(--serif);color:var(--ink)}
+.nowlist .who{font-size:12.5px;color:var(--ink-2);margin-top:2px}
+.nowlist .more-now{display:block;border:0;padding:10px 0 0}
+.nowlist .more-now button{font:500 13px var(--sans);background:none;border:0;padding:0;
+  color:var(--ink-2);cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+.upd{margin-top:6px;padding-left:10px;border-left:2px solid var(--spreading);font-size:14px}
+.upd span{display:block;font-size:12px;color:var(--ink-3)}
+.upd a{font:500 15px/1.35 var(--serif);color:var(--ink)}
+.upd .since-first{margin-top:2px}
 .lane{padding-top:22px}
-.lane>header{display:flex;align-items:baseline;gap:10px;margin-bottom:4px}
-.lane h2{font:700 17px/1.2 var(--sans);letter-spacing:-.01em;margin:0}
+.lane>header{display:flex;align-items:baseline;flex-wrap:wrap;gap:2px 10px;margin-bottom:4px}
+.lane h2{font:700 17px/1.2 var(--sans);letter-spacing:-.01em;margin:0;white-space:nowrap}
 .lane .why{font-size:13px;color:var(--ink-3)}
 .lane .empty{color:var(--ink-3);font-size:14px;padding:12px 0}
 .lane ol{list-style:none;margin:0;padding:0}
