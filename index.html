@@ -1,0 +1,331 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Corral · Philly moto parking</title>
+<meta name="description" content="Every PPA motorcycle and scooter corral in Philadelphia, sorted by how close you are.">
+<meta name="theme-color" content="#15171A">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Corral">
+<link rel="apple-touch-icon" href="/icon-180.png">
+<link rel="icon" href="/icon-192.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/leaflet.css">
+<style>
+:root{
+  --bg:#F4F4F2; --card:#FFFFFF; --ink:#141518; --ink2:#5C5F66; --ink3:#8A8D93; --line:#E4E4E1;
+  --amber:#E89A00; --amber-ink:#1A1300; --open:#14864B; --closed:#9A9CA1; --pin:#141518;
+  --shadow:0 -10px 40px rgba(0,0,0,.14);
+  --sans:"Inter",-apple-system,BlinkMacSystemFont,system-ui,sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0F1012; --card:#18191C; --ink:#F1F1F2; --ink2:#A7A9AF; --ink3:#7C7F86; --line:#2A2B2F;
+  --amber:#FFB020; --open:#35C37A; --closed:#6E7076; --pin:#FFB020; --shadow:0 -10px 40px rgba(0,0,0,.5);
+}}
+:root[data-theme="dark"]{--bg:#0F1012;--card:#18191C;--ink:#F1F1F2;--ink2:#A7A9AF;--ink3:#7C7F86;--line:#2A2B2F;--amber:#FFB020;--open:#35C37A;--closed:#6E7076;--pin:#FFB020;--shadow:0 -10px 40px rgba(0,0,0,.5)}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font-family:var(--sans);-webkit-font-smoothing:antialiased;overflow:hidden}
+button{font:inherit;color:inherit}
+#map{position:fixed;inset:0;background:var(--bg)}
+.leaflet-container{font-family:var(--sans);background:var(--bg)}
+.leaflet-control-attribution{font-size:10px;background:color-mix(in srgb,var(--card) 80%,transparent)!important;color:var(--ink3)!important}
+.leaflet-control-attribution a{color:var(--ink2)!important}
+
+/* top bar */
+.top{position:fixed;z-index:500;top:calc(env(safe-area-inset-top,0px) + 12px);left:max(12px,env(safe-area-inset-left));right:max(12px,env(safe-area-inset-right));display:flex;gap:8px;align-items:center;pointer-events:none}
+.top>*{pointer-events:auto}
+.brand{display:flex;align-items:center;gap:8px;background:var(--card);border-radius:999px;padding:0 14px 0 10px;height:44px;font-weight:700;letter-spacing:-.01em;box-shadow:0 4px 18px rgba(0,0,0,.12)}
+.brand i{width:22px;height:22px;border-radius:50%;background:var(--amber);display:grid;place-items:center;font-style:normal;font-size:12px;font-weight:800;color:var(--amber-ink)}
+.spacer{flex:1}
+.fab{width:44px;height:44px;border-radius:50%;border:0;background:var(--card);box-shadow:0 4px 18px rgba(0,0,0,.12);display:grid;place-items:center;cursor:pointer}
+.fab svg{width:20px;height:20px}
+.fab.on{background:var(--amber);color:var(--amber-ink)}
+
+/* pins */
+.pin{width:30px;height:30px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);background:var(--pin);border:2px solid var(--card);display:grid;place-items:center;box-shadow:0 3px 8px rgba(0,0,0,.3);transition:transform .15s}
+.pin b{transform:rotate(45deg);font-size:12px;font-weight:800;color:var(--card)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .pin b{color:#15171A}}
+.pin.closed{opacity:.55}
+.pin.sel{opacity:1;background:var(--amber);transform:rotate(-45deg) scale(1.25)}
+.pin.sel b{color:var(--amber-ink)}
+.me{width:18px;height:18px;border-radius:50%;background:#2F7BF6;border:3px solid #fff;box-shadow:0 0 0 8px rgba(47,123,246,.18)}
+
+/* sheet */
+.sheet{position:fixed;z-index:600;left:0;right:0;bottom:0;background:var(--card);border-radius:22px 22px 0 0;box-shadow:var(--shadow);display:flex;flex-direction:column;max-height:calc(100% - env(safe-area-inset-top,0px) - 72px);height:46%;transition:height .28s cubic-bezier(.2,.8,.2,1);padding-bottom:env(safe-area-inset-bottom,0px)}
+.sheet.min{height:150px}
+.sheet.max{height:calc(100% - env(safe-area-inset-top,0px) - 72px)}
+.grab{border:0;background:none;width:100%;padding:10px 0 4px;cursor:grab;display:grid;place-items:center;touch-action:none}
+.grab span{width:40px;height:5px;border-radius:3px;background:var(--line)}
+.head{padding:4px 18px 10px;display:flex;align-items:baseline;justify-content:space-between;gap:12px}
+.head h1{font-size:20px;margin:0;letter-spacing:-.02em}
+.head p{margin:0;font-size:13px;color:var(--ink3);white-space:nowrap}
+.filters{display:flex;gap:8px;padding:0 18px 12px;overflow-x:auto;scrollbar-width:none}
+.filters::-webkit-scrollbar{display:none}
+.chip{border:1px solid var(--line);background:transparent;border-radius:999px;height:36px;padding:0 14px;font-size:14px;font-weight:500;white-space:nowrap;cursor:pointer;color:var(--ink2)}
+.chip[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:var(--card)}
+.list{overflow-y:auto;flex:1;overscroll-behavior:contain;padding:0 0 12px}
+.row{all:unset;box-sizing:border-box;width:100%;display:grid;grid-template-columns:1fr auto;gap:2px 12px;padding:13px 18px;border-top:1px solid var(--line);cursor:pointer}
+.row:focus-visible{outline:2px solid var(--amber);outline-offset:-2px}
+.row .nm{font-weight:600;font-size:16px;letter-spacing:-.01em}
+.row .dist{font-weight:600;font-size:15px;text-align:right;font-variant-numeric:tabular-nums}
+.row .sub{font-size:13.5px;color:var(--ink2);display:flex;flex-wrap:wrap;gap:4px 10px;align-items:center}
+.row .walk{font-size:12.5px;color:var(--ink3);text-align:right}
+.st{display:inline-flex;align-items:center;gap:6px;font-weight:500}
+.st i{width:7px;height:7px;border-radius:50%;background:var(--closed)}
+.st.open{color:var(--open)} .st.open i{background:var(--open)}
+.tag{font-size:12px;border:1px solid var(--line);border-radius:6px;padding:1px 6px;color:var(--ink2)}
+.empty{padding:28px 18px;color:var(--ink3);text-align:center}
+
+/* detail */
+.detail{padding:0 18px 18px;overflow-y:auto}
+.back{border:0;background:none;color:var(--ink2);font-size:15px;padding:6px 0;min-height:40px;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+.detail h2{font-size:28px;letter-spacing:-.03em;margin:4px 0 2px}
+.detail .where{color:var(--ink2);margin:0 0 16px;font-size:15px}
+.facts{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
+.fact{background:var(--bg);border-radius:14px;padding:12px 14px}
+.fact dt{font-size:12px;color:var(--ink3);margin-bottom:4px;text-transform:uppercase;letter-spacing:.04em}
+.fact dd{margin:0;font-weight:600;font-size:16px}
+.fact.wide{grid-column:1/-1}
+.side{display:flex;align-items:center;gap:10px}
+.side svg{flex:none}
+.cta{display:flex;gap:10px;margin-bottom:16px}
+.btn{flex:1;display:inline-flex;align-items:center;justify-content:center;gap:8px;height:52px;border-radius:14px;font-weight:600;font-size:16px;text-decoration:none;border:0;cursor:pointer}
+.btn.go{background:var(--amber);color:var(--amber-ink)}
+.btn.alt{background:var(--bg);color:var(--ink)}
+.pay{font-size:14px;color:var(--ink2);line-height:1.5;border-top:1px solid var(--line);padding-top:14px}
+.pay b{color:var(--ink)}
+.note{font-size:12.5px;color:var(--ink3);margin-top:12px;line-height:1.45}
+
+/* info */
+.info{position:fixed;inset:0;z-index:900;background:color-mix(in srgb,#000 45%,transparent);display:flex;align-items:flex-end}
+.info .box{background:var(--card);border-radius:22px 22px 0 0;padding:22px 20px calc(22px + env(safe-area-inset-bottom,0px));max-height:85%;overflow-y:auto;width:100%;max-width:640px;margin:0 auto}
+.info h3{margin:0 0 12px;font-size:22px;letter-spacing:-.02em}
+.info ul{padding-left:18px;margin:0 0 14px;color:var(--ink2);line-height:1.55}
+.info li b{color:var(--ink)}
+.info a{color:var(--ink)}
+.toast{position:fixed;z-index:950;left:50%;transform:translateX(-50%);top:calc(env(safe-area-inset-top,0px) + 66px);background:var(--ink);color:var(--card);padding:10px 16px;border-radius:12px;font-size:14px;max-width:calc(100% - 32px);box-shadow:0 6px 20px rgba(0,0,0,.2)}
+[hidden]{display:none!important}
+
+@media (min-width:860px){
+  .sheet,.sheet.min,.sheet.max{left:16px;right:auto;top:76px;bottom:16px;width:400px;height:auto;max-height:none;border-radius:20px}
+  .grab{display:none}
+  .head{padding-top:16px}
+}
+</style>
+</head>
+<body>
+<div id="map" aria-label="Map of motorcycle and scooter corrals"></div>
+
+<div class="top">
+  <div class="brand"><i aria-hidden="true">P</i>Corral</div>
+  <div class="spacer"></div>
+  <button class="fab" id="info" aria-label="How corrals work">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg>
+  </button>
+  <button class="fab" id="locate" aria-label="Find corrals near me">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2" fill="currentColor"/></svg>
+  </button>
+</div>
+
+<section class="sheet" id="sheet" aria-label="Corrals">
+  <button class="grab" id="grab" aria-label="Expand or collapse list"><span></span></button>
+  <div id="listView" style="display:flex;flex-direction:column;min-height:0;flex:1">
+    <div class="head"><h1 id="title">All corrals</h1><p id="count"></p></div>
+    <div class="filters" role="group" aria-label="Filters">
+      <button class="chip" data-f="open" aria-pressed="false">In posted hours</button>
+      <button class="chip" data-f="lock" aria-pressed="false">Locking posts</button>
+      <button class="chip" data-f="cc" aria-pressed="false">Center City</button>
+      <button class="chip" data-f="uc" aria-pressed="false">University City</button>
+    </div>
+    <div class="list" id="list"></div>
+  </div>
+  <div class="detail" id="detail" hidden></div>
+</section>
+
+<div class="info" id="infoBox" hidden role="dialog" aria-modal="true" aria-labelledby="infoT">
+  <div class="box">
+    <h3 id="infoT">How corrals work</h3>
+    <ul>
+      <li><b>$5 parks you all day</b> during the posted hours. Pay at a pay-by-plate kiosk or in the meterUP app.</li>
+      <li><b>Zone number:</b> it starts with 99 and is posted at the corral. Enter it when you pay.</li>
+      <li><b>Permits:</b> $75 for 3 months, $150 for 6, $225 for 9, $250 for a year. From the PPA Permit Office at 35 N. 8th St. Bring your registration.</li>
+      <li><b>Squeeze in.</b> Dense parking is allowed. Park carefully so you don't knock anyone over.</li>
+      <li>Residential permits don't work in corrals. Don't park in bike corrals.</li>
+    </ul>
+    <p class="note">Locations, sides of the street and hours come from the PPA's official corral map, checked Nov 20, 2026. Pins sit mid-block on the side the PPA lists, so look for the sign. Rules and prices are from <a href="https://philapark.org/?p=2054" target="_blank" rel="noopener">philapark.org</a>. Signs on the street always win.</p>
+    <button class="btn alt" id="infoClose" style="width:100%;margin-top:8px">Got it</button>
+  </div>
+</div>
+<div class="toast" id="toast" hidden></div>
+
+<script src="/leaflet.js"></script>
+<script>
+const C=[{"id":1,"name":"500 S 2nd St","side":"East","hours":"Mon-Sun: 9am-10pm","lock":true,"zones":null,"lot":false,"lat":39.941707,"lon":-75.145714,"area":"Center City","approx":false},{"id":2,"name":"100 S 6th St","side":"West","hours":"Mon-Sun: 8am-10pm","lock":false,"zones":null,"lot":false,"lat":39.9483,"lon":-75.150928,"area":"Center City","approx":false},{"id":3,"name":"100 N 11th St","side":"East","hours":"Mon-Sat: 8am-10pm","lock":true,"zones":null,"lot":false,"lat":39.955,"lon":-75.157402,"area":"Center City","approx":false},{"id":4,"name":"100 S 12th St","side":"West","hours":"Mon-Sun: 8am-10pm","lock":false,"zones":null,"lot":false,"lat":39.949503,"lon":-75.160588,"area":"Center City","approx":false},{"id":5,"name":"299 S 12th St","side":"West","hours":"Mon-Sat: 8am-10pm","lock":true,"zones":null,"lot":false,"lat":39.946694,"lon":-75.161205,"area":"Center City","approx":false},{"id":6,"name":"299 S 17th St","side":"West","hours":"Mon-Sat: 8am-10pm","lock":false,"zones":null,"lot":false,"lat":39.947714,"lon":-75.169554,"area":"Center City","approx":false},{"id":7,"name":"1300 Arch St","side":"North","hours":"Mon-Sun: 8am-10pm","lock":false,"zones":"3","lot":false,"lat":39.954301,"lon":-75.16247,"area":"Center City","approx":false},{"id":8,"name":"500 S Broad St","side":"East","hours":"Mon-Sat: 8am-10pm","lock":false,"zones":null,"lot":false,"lat":39.94417,"lon":-75.165479,"area":"Center City","approx":false},{"id":9,"name":"200 Chestnut St","side":"North","hours":"Mon-Sun: 8am-10pm","lock":false,"zones":null,"lot":false,"lat":39.948396,"lon":-75.144398,"area":"Center City","approx":false},{"id":10,"name":"700 Chestnut St","side":"North","hours":"Mon-Sun: 6am-2am","lock":false,"zones":null,"lot":false,"lat":39.949498,"lon":-75.153156,"area":"Center City","approx":false},{"id":11,"name":"800 Chestnut St","side":"North","hours":"Mon-Sun: 6am-2am","lock":true,"zones":null,"lot":false,"lat":39.949741,"lon":-75.155128,"area":"Center City","approx":false},{"id":12,"name":"1000 Chestnut St","side":"North","hours":"Mon-Sun: 6am-2am","lock":true,"zones":null,"lot":false,"lat":39.950314,"lon":-75.158372,"area":"Center City","approx":false},{"id":13,"name":"1500 Chestnut St","side":"North","hours":"Mon-Sun: 6am-2am","lock":false,"zones":"2","lot":false,"lat":39.951146,"lon":-75.166431,"area":"Center City","approx":false},{"id":14,"name":"100 Dock St","side":"East","hours":"Mon-Sun: 8am-10pm","lock":true,"zones":null,"lot":false,"lat":39.946433,"lon":-75.144317,"area":"Center City","approx":false},{"id":15,"name":"3400/3500 Filbert St","side":"North","hours":"Mon-Sat: 8am-8pm","lock":false,"zones":null,"lot":false,"lat":39.956694,"lon":-75.192299,"area":"University City","approx":false},{"id":16,"name":"1700 JFK Blvd","side":"South","hours":"Mon-Sat: 8am-10pm","lock":true,"zones":null,"lot":false,"lat":39.95411,"lon":-75.169216,"area":"Center City","approx":false},{"id":17,"name":"1500 Latimer St","side":"North","hours":"Mon-Sun: 8am-10pm","lock":false,"zones":null,"lot":false,"lat":39.948037,"lon":-75.167109,"area":"Center City","approx":false},{"id":18,"name":"1600 Locust St","side":"South","hours":"Mon-Sun: 8am-10pm","lock":false,"zones":null,"lot":false,"lat":39.948565,"lon":-75.168585,"area":"Center City","approx":false},{"id":19,"name":"3600-3700 Ludlow St","side":"South","hours":"Mon-Sat: 8am-8pm","lock":false,"zones":null,"lot":false,"lat":39.955532,"lon":-75.196468,"area":"University City","approx":false},{"id":20,"name":"2100 Sansom St","side":"North","hours":"Mon-Sat: 8am-8pm","lock":true,"zones":null,"lot":false,"lat":39.951626,"lon":-75.176518,"area":"Center City","approx":false},{"id":21,"name":"3700 Sansom St","side":"North","hours":"Mon-Sun: 8am-8pm","lock":false,"zones":null,"lot":false,"lat":39.954256,"lon":-75.197665,"area":"University City","approx":false},{"id":22,"name":"601 South St","side":"North","hours":"Mon-Sun: 11am-12am","lock":false,"zones":null,"lot":false,"lat":39.942144,"lon":-75.153763,"area":"Center City","approx":false},{"id":23,"name":"1300 South St","side":"North","hours":"Mon-Sun: 9am-10pm","lock":false,"zones":null,"lot":false,"lat":39.943544,"lon":-75.164791,"area":"Center City","approx":false},{"id":24,"name":"800 Spruce St","side":"North","hours":"Mon-Sat: 8am-10pm","lock":false,"zones":null,"lot":false,"lat":39.94576,"lon":-75.155191,"area":"Center City","approx":false},{"id":25,"name":"1901 Callowhill St","side":null,"hours":null,"lock":false,"zones":null,"lot":true,"lat":39.960318,"lon":-75.170873,"area":"Center City","approx":false},{"id":26,"name":"1100 Arch St","side":"North","hours":"Mon-Sun: 8am-10pm","lock":true,"zones":null,"lot":false,"lat":39.953852,"lon":-75.15884,"area":"Center City","approx":false},{"id":27,"name":"1600 Chancellor St","side":"North","hours":"Mon-Sat: 8am-10pm","lock":false,"zones":null,"lot":false,"lat":39.949293,"lon":-75.168447,"area":"Center City","approx":false},{"id":28,"name":"1600 Cherry St","side":"North","hours":"Mon-Sun: 8am-10pm","lock":false,"zones":null,"lot":false,"lat":39.955815,"lon":-75.167022,"area":"Center City","approx":false},{"id":29,"name":"1800 JFK Blvd","side":"North","hours":"Mon-Sat: 8am-10pm","lock":false,"zones":null,"lot":false,"lat":39.954268,"lon":-75.170606,"area":"Center City","approx":false},{"id":30,"name":"700 Arch St","side":"South","hours":"Mon-Sat: 8am-10pm","lock":false,"zones":null,"lot":false,"lat":39.95295,"lon":-75.152677,"area":"Center City","approx":false},{"id":31,"name":"1700 Sansom St","side":"North","hours":"Mon-Sun: 8am-10pm","lock":false,"zones":null,"lot":false,"lat":39.95078,"lon":-75.169744,"area":"Center City","approx":false},{"id":32,"name":"1500 Sansom St","side":"North","hours":"Mon-Sun: 8am-10pm","lock":false,"zones":null,"lot":false,"lat":39.950394,"lon":-75.166593,"area":"Center City","approx":false},{"id":33,"name":"1800 Sansom St","side":"North","hours":"Mon-Sun: 8am-10pm","lock":false,"zones":null,"lot":false,"lat":39.95098,"lon":-75.171322,"area":"Center City","approx":false},{"id":34,"name":"2200 Market St","side":"North","hours":"Mon-Sun: 8am-10pm","lock":false,"zones":null,"lot":false,"lat":39.954063,"lon":-75.177265,"area":"Center City","approx":false},{"id":35,"name":"1800 South St","side":"South","hours":"Mon-Sat: 8am-8pm","lock":false,"zones":null,"lot":false,"lat":39.944402,"lon":-75.172723,"area":"Center City","approx":false},{"id":36,"name":"Unit S 6th St","side":"West","hours":"Mon-Sun: 8am-10pm","lock":false,"zones":null,"lot":false,"lat":39.950252,"lon":-75.150669,"area":"Center City","approx":false},{"id":37,"name":"200 S 33rd St","side":"West","hours":"Mon-Sat: 8am-8pm","lock":false,"zones":null,"lot":false,"lat":39.951902,"lon":-75.190374,"area":"University City","approx":false},{"id":38,"name":"1000 Locust St","side":"South","hours":"Mon-Sun: 8am-10pm","lock":false,"zones":null,"lot":false,"lat":39.947307,"lon":-75.158456,"area":"Center City","approx":false},{"id":39,"name":"200 S 10th St","side":"West","hours":"Mon-Sun: 8am-10pm","lock":false,"zones":null,"lot":false,"lat":39.946877,"lon":-75.157714,"area":"Center City","approx":false},{"id":40,"name":"299 S 10th St","side":"West","hours":"Mon-Sat: 8am-10pm","lock":false,"zones":null,"lot":false,"lat":39.946265,"lon":-75.158061,"area":"Center City","approx":false},{"id":41,"name":"3600 Spruce St","side":"South","hours":"Mon-Sat: 8am-8pm","lock":false,"zones":null,"lot":false,"lat":39.950899,"lon":-75.197418,"area":"University City","approx":false},{"id":42,"name":"400 S Front St","side":"West","hours":"Mon-Sun: 8am-10pm","lock":false,"zones":null,"lot":false,"lat":39.942415,"lon":-75.14393,"area":"Center City","approx":false},{"id":43,"name":"1900 Market St","side":"North","hours":"Mon-Sat: 8am-10pm","lock":false,"zones":null,"lot":false,"lat":39.95345,"lon":-75.172415,"area":"Center City","approx":false},{"id":44,"name":"200 N 6th St","side":"West","hours":"Mon-Sun: 8am-10pm","lock":false,"zones":null,"lot":false,"lat":39.954968,"lon":-75.149636,"area":"Center City","approx":false},{"id":45,"name":"100 S Front St","side":"West","hours":"Mon-Sun: 8am-10pm","lock":false,"zones":null,"lot":false,"lat":39.947024,"lon":-75.142905,"area":"Center City","approx":false},{"id":46,"name":"1000 South St","side":"North","hours":"Mon-Sun: 11am-12am","lock":false,"zones":null,"lot":false,"lat":39.942945,"lon":-75.159972,"area":"Center City","approx":false},{"id":47,"name":"1700 Market St","side":"North","hours":"Mon-Sun: 8am-10pm","lock":false,"zones":null,"lot":false,"lat":39.953054,"lon":-75.169256,"area":"Center City","approx":false},{"id":48,"name":"1400 Wood St","side":"South","hours":"Mon-Sat: 8am-8pm","lock":false,"zones":null,"lot":false,"lat":39.95914,"lon":-75.1657,"area":"Center City","approx":true},{"id":49,"name":"1600 Chestnut St","side":"North","hours":"Mon-Sun: 6am-2am","lock":false,"zones":null,"lot":false,"lat":39.951346,"lon":-75.168012,"area":"Center City","approx":false},{"id":50,"name":"3000 JFK Blvd","side":"South","hours":"Mon-Sat: 8am-8pm","lock":false,"zones":null,"lot":false,"lat":39.955779,"lon":-75.18397,"area":"University City","approx":false},{"id":51,"name":"300 Cherry St","side":"North","hours":"Mon-Sat: 6:30am-6:30pm","lock":false,"zones":null,"lot":false,"lat":39.95331,"lon":-75.14565,"area":"Center City","approx":false},{"id":52,"name":"1700 JFK Blvd","side":"North","hours":"Mon-Sat: 8am-10pm","lock":false,"zones":null,"lot":false,"lat":39.954043,"lon":-75.16831,"area":"Center City","approx":false}];
+const $=s=>document.querySelector(s);
+const DAYS=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+
+/* ---- hours ---- */
+function parseT(s){const m=s.trim().toLowerCase().match(/^(\d{1,2})(?::(\d{2}))?\s*(am|pm)$/);if(!m)return null;let h=+m[1]%12;if(m[3]==='pm')h+=12;return h*60+(+m[2]||0);}
+function parseHours(str){
+  if(!str)return null;
+  const m=str.match(/^(Mon-Sun|Mon-Sat)\s*[:|]\s*([\d:]+\s*[ap]m)\s*-\s*([\d:]+\s*[ap]m)$/i);
+  if(!m)return null;
+  let a=parseT(m[2]),b=parseT(m[3]);if(a==null||b==null)return null;
+  if(b<=a)b+=1440; // past midnight
+  return {days:m[1].toLowerCase()==='mon-sun'?[0,1,2,3,4,5,6]:[1,2,3,4,5,6],a,b};
+}
+function nowPhilly(){
+  const p=new Intl.DateTimeFormat('en-US',{timeZone:'America/New_York',weekday:'short',hour:'numeric',minute:'numeric',hour12:false}).formatToParts(new Date());
+  const g=t=>p.find(x=>x.type===t).value;
+  return {d:DAYS.indexOf(g('weekday')),m:(+g('hour')%24)*60+(+g('minute'))};
+}
+function inHours(h){
+  if(!h)return null;const n=nowPhilly();
+  if(h.days.includes(n.d)&&n.m>=h.a&&n.m<h.b)return true;
+  const pd=(n.d+6)%7; // late-night spill from yesterday
+  if(h.b>1440&&h.days.includes(pd)&&n.m<h.b-1440)return true;
+  return false;
+}
+function prettyHours(str){
+  if(!str)return '—';
+  return str.replace(/\s*-\s*/g,'–').replace(/\s*[:|]\s*/,' · ').replace(/:00/g,'').replace('12am','midnight');
+}
+C.forEach(c=>{c.h=parseHours(c.hours);});
+
+/* ---- map ---- */
+const dark=matchMedia('(prefers-color-scheme: dark)');
+const map=L.map('map',{zoomControl:false,attributionControl:true}).setView([39.9505,-75.1665],14);
+const tileUrl=()=>`https://{s}.basemaps.cartocdn.com/${dark.matches?'dark_all':'rastertiles/voyager'}/{z}/{x}/{y}{r}.png`;
+let tiles=L.tileLayer(tileUrl(),{maxZoom:20,subdomains:'abcd',attribution:'© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> © <a href="https://carto.com/attributions">CARTO</a>'}).addTo(map);
+dark.addEventListener?.('change',()=>tiles.setUrl(tileUrl()));
+
+const markers={};
+function pinIcon(c,sel){
+  const open=inHours(c.h);
+  return L.divIcon({className:'',iconSize:[30,30],iconAnchor:[15,30],html:`<div class="pin${open===false?' closed':''}${sel?' sel':''}"><b>P</b></div>`});
+}
+C.forEach(c=>{
+  markers[c.id]=L.marker([c.lat,c.lon],{icon:pinIcon(c),title:c.name,keyboard:true}).addTo(map).on('click',()=>openDetail(c.id,true));
+});
+map.fitBounds(L.latLngBounds(C.filter(c=>c.area==='Center City').map(c=>[c.lat,c.lon])),{paddingTopLeft:[20,80],paddingBottomRight:[20,innerWidth>=860?20:innerHeight*.46]});
+if(innerWidth>=860) map.panBy([-200,0],{animate:false});
+
+/* ---- distance ---- */
+let me=null, meMarker=null;
+function dist(a,b){const R=6371e3,t=Math.PI/180;const x=(b.lon-a.lon)*t*Math.cos((a.lat+b.lat)/2*t),y=(b.lat-a.lat)*t;return Math.sqrt(x*x+y*y)*R;}
+const fmtD=m=>m<160?`${Math.round(m*3.281/10)*10} ft`:`${(m/1609.34).toFixed(m<1609?2:1)} mi`;
+const walk=m=>{const min=Math.max(1,Math.round(m*1.25/80));return `${min} min walk`;};
+
+/* ---- list ---- */
+const F={open:false,lock:false,cc:false,uc:false};
+function filtered(){
+  return C.filter(c=>(!F.open||inHours(c.h)!==false)&&(!F.lock||c.lock)&&(!(F.cc||F.uc)||(F.cc&&c.area==='Center City')||(F.uc&&c.area==='University City')));
+}
+function statusHTML(c){
+  const o=inHours(c.h);
+  if(c.lot)return `<span class="st">Off-street lot</span>`;
+  if(o===null)return `<span class="st">Hours on sign</span>`;
+  return o?`<span class="st open"><i></i>In posted hours</span>`:`<span class="st"><i></i>Outside posted hours</span>`;
+}
+function renderList(){
+  let rows=filtered();
+  if(me){rows.forEach(c=>c.d=dist(me,c));rows.sort((a,b)=>a.d-b.d);}
+  else rows.sort((a,b)=>(a.area>b.area?1:-1)||a.name.localeCompare(b.name,undefined,{numeric:true}));
+  $('#title').textContent=me?'Closest to you':'All corrals';
+  $('#count').textContent=`${rows.length} of ${C.length}`;
+  $('#list').innerHTML=rows.length?rows.map(c=>`<button class="row" data-id="${c.id}">
+    <span class="nm">${c.name}</span><span class="dist">${me?fmtD(c.d):''}</span>
+    <span class="sub">${statusHTML(c)}${c.side?`<span>${c.side} side</span>`:''}${c.lock?'<span class="tag">Locking posts</span>':''}</span><span class="walk">${me?walk(c.d):c.area==='University City'?'Univ. City':''}</span>
+  </button>`).join(''):`<div class="empty">Nothing matches those filters.</div>`;
+}
+$('#list').addEventListener('click',e=>{const r=e.target.closest('.row');if(r)openDetail(+r.dataset.id,false);});
+document.querySelectorAll('.chip').forEach(b=>b.onclick=()=>{F[b.dataset.f]=!F[b.dataset.f];b.setAttribute('aria-pressed',F[b.dataset.f]);renderList();});
+
+/* ---- detail ---- */
+let sel=null;
+const isApple=/iPhone|iPad|Macintosh/.test(navigator.userAgent)&&'ontouchend' in document;
+const sideSVG=s=>{const pos={North:[12,5],South:[12,19],East:[19,12],West:[5,12]}[s]||[12,12];const horiz=s==='North'||s==='South';
+  return `<svg width="40" height="40" viewBox="0 0 24 24" aria-hidden="true"><rect x="${horiz?2:9}" y="${horiz?9:2}" width="${horiz?20:6}" height="${horiz?6:20}" rx="1" fill="var(--line)"/><circle cx="${pos[0]}" cy="${pos[1]}" r="3" fill="var(--amber)"/></svg>`;};
+function openDetail(id,fromMap){
+  const c=C.find(x=>x.id===id);if(!c)return;
+  if(sel)markers[sel].setIcon(pinIcon(C.find(x=>x.id===sel)));
+  sel=id;markers[id].setIcon(pinIcon(c,true));markers[id].setZIndexOffset(1000);
+  const d=me?dist(me,c):null;
+  const dest=`${c.lat},${c.lon}`;
+  const gm=`https://www.google.com/maps/dir/?api=1&destination=${dest}&travelmode=driving`;
+  const am=`https://maps.apple.com/?daddr=${dest}&dirflg=d`;
+  $('#detail').innerHTML=`
+    <button class="back" id="back"><span aria-hidden="true">←</span> ${me?'Closest corrals':'All corrals'}</button>
+    <h2>${c.name}</h2>
+    <p class="where">${c.area}${d!=null?` · ${fmtD(d)} away`:''}</p>
+    <div class="cta">
+      <a class="btn go" href="${isApple?am:gm}" target="_blank" rel="noopener">Directions</a>
+      <a class="btn alt" href="${isApple?gm:am}" target="_blank" rel="noopener">${isApple?'Google Maps':'Apple Maps'}</a>
+    </div>
+    <dl class="facts">
+      ${c.side?`<div class="fact wide side">${sideSVG(c.side)}<div><dt>Side of street</dt><dd>${c.side} side of the block</dd></div></div>`:''}
+      <div class="fact"><dt>Posted hours</dt><dd>${prettyHours(c.hours)}</dd></div>
+      <div class="fact"><dt>Right now</dt><dd>${c.lot?'Off-street lot':inHours(c.h)===null?'Check sign':inHours(c.h)?'In posted hours':'Outside hours'}</dd></div>
+      <div class="fact"><dt>Locking posts</dt><dd>${c.lock?'Yes':'Not listed'}</dd></div>
+      <div class="fact"><dt>Zones</dt><dd>${c.zones?c.zones+' zones':'1'}</dd></div>
+    </dl>
+    <div class="pay">${c.lot?'This is a PPA off-street lot with scooter and motorcycle parking. Check the lot sign for rates.':'<b>$5 for the day</b> during posted hours. Pay at the kiosk or in meterUP with the zone number on the sign (it starts with 99). Permits cover it too.'}</div>
+    ${c.approx?'<p class="note">This pin is approximate. The PPA map has the block but not the exact spot.</p>':''}
+    <p class="note">Pin is mid-block. Look for the PPA corral sign.</p>`;
+  $('#listView').style.display='none';$('#detail').hidden=false;
+  setSheet(innerWidth<860?'mid':'mid');
+  $('#back').onclick=closeDetail;
+  const yOff=innerWidth<860?innerHeight*.18:0, xOff=innerWidth>=860?-200:0;
+  const p=map.project([c.lat,c.lon],Math.max(map.getZoom(),16)).add([-xOff,yOff]);
+  map.flyTo(map.unproject(p,Math.max(map.getZoom(),16)),Math.max(map.getZoom(),16),{duration:.5});
+  $('#back').focus({preventScroll:true});
+}
+function closeDetail(){
+  if(sel){markers[sel].setIcon(pinIcon(C.find(x=>x.id===sel)));markers[sel].setZIndexOffset(0);sel=null;}
+  $('#detail').hidden=true;$('#listView').style.display='flex';
+}
+
+/* ---- sheet ---- */
+const sheet=$('#sheet');
+function setSheet(s){sheet.classList.toggle('min',s==='min');sheet.classList.toggle('max',s==='max');}
+$('#grab').onclick=()=>setSheet(sheet.classList.contains('min')?'mid':sheet.classList.contains('max')?'min':'max');
+let sy=null,sh=0;
+$('#grab').addEventListener('touchstart',e=>{sy=e.touches[0].clientY;sh=sheet.getBoundingClientRect().height;},{passive:true});
+$('#grab').addEventListener('touchmove',e=>{if(sy==null)return;sheet.style.transition='none';sheet.style.height=Math.max(120,sh+(sy-e.touches[0].clientY))+'px';},{passive:true});
+$('#grab').addEventListener('touchend',e=>{if(sy==null)return;const h=sheet.getBoundingClientRect().height;sheet.style.transition='';sheet.style.height='';const r=h/innerHeight;setSheet(r<.3?'min':r>.66?'max':'mid');sy=null;e.preventDefault();});
+map.on('dragstart',()=>{if(innerWidth<860&&!sel)setSheet('min');});
+
+/* ---- locate ---- */
+function toast(t){const el=$('#toast');el.textContent=t;el.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>el.hidden=true,3200);}
+function locate(auto){
+  if(!navigator.geolocation){if(!auto)toast("This browser can't share your location.");return;}
+  $('#locate').classList.add('on');
+  navigator.geolocation.getCurrentPosition(p=>{
+    me={lat:p.coords.latitude,lon:p.coords.longitude};
+    if(!meMarker)meMarker=L.marker([me.lat,me.lon],{icon:L.divIcon({className:'',iconSize:[18,18],html:'<div class="me"></div>'}),interactive:false,zIndexOffset:2000}).addTo(map);
+    else meMarker.setLatLng([me.lat,me.lon]);
+    closeDetail();renderList();
+    const near=[...C].sort((a,b)=>dist(me,a)-dist(me,b)).slice(0,3);
+    if(dist(me,near[0])>25000){toast("You're far from Philly. Showing all corrals by distance.");map.setView([39.9505,-75.1665],14);return;}
+    map.fitBounds(L.latLngBounds([[me.lat,me.lon],...near.map(c=>[c.lat,c.lon])]),{paddingTopLeft:[40,90],paddingBottomRight:[40,innerWidth>=860?40:innerHeight*.5],maxZoom:17});
+    setSheet('mid');
+  },err=>{$('#locate').classList.remove('on');if(!auto)toast(err.code===1?'Location is off for this site. Turn it on in your browser settings.':"Couldn't get your location.");},{enableHighAccuracy:true,timeout:10000,maximumAge:30000});
+}
+$('#locate').onclick=()=>locate(false);
+navigator.permissions?.query({name:'geolocation'}).then(s=>{if(s.state==='granted')locate(true);}).catch(()=>{});
+
+/* ---- info ---- */
+$('#info').onclick=()=>{$('#infoBox').hidden=false;$('#infoClose').focus();};
+$('#infoClose').onclick=()=>$('#infoBox').hidden=true;
+$('#infoBox').onclick=e=>{if(e.target.id==='infoBox')$('#infoBox').hidden=true;};
+addEventListener('keydown',e=>{if(e.key==='Escape'){if(!$('#infoBox').hidden)$('#infoBox').hidden=true;else if(sel)closeDetail();}});
+
+renderList();
+setInterval(()=>{renderList();C.forEach(c=>{if(c.id!==sel)markers[c.id].setIcon(pinIcon(c));});},60000);
+</script>
+</body>
+</html>
