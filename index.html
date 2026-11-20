@@ -32,6 +32,8 @@ html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font-family
 button{font:inherit;color:inherit}
 #map{position:fixed;inset:0;background:var(--bg)}
 .leaflet-container{font-family:var(--sans);background:var(--bg)}
+.leaflet-tile-pane{filter:saturate(.35) contrast(.95) brightness(1.03)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .leaflet-tile-pane{filter:invert(1) hue-rotate(180deg) saturate(.25) brightness(.85) contrast(.9)}}
 .leaflet-control-attribution{font-size:10px;background:color-mix(in srgb,var(--card) 80%,transparent)!important;color:var(--ink3)!important}
 .leaflet-control-attribution a{color:var(--ink2)!important}
 
@@ -199,9 +201,7 @@ C.forEach(c=>{c.h=parseHours(c.hours);});
 /* ---- map ---- */
 const dark=matchMedia('(prefers-color-scheme: dark)');
 const map=L.map('map',{zoomControl:false,attributionControl:true}).setView([39.9505,-75.1665],14);
-const tileUrl=()=>`https://{s}.basemaps.cartocdn.com/${dark.matches?'dark_all':'rastertiles/voyager'}/{z}/{x}/{y}{r}.png`;
-let tiles=L.tileLayer(tileUrl(),{maxZoom:20,subdomains:'abcd',attribution:'© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> © <a href="https://carto.com/attributions">CARTO</a>'}).addTo(map);
-dark.addEventListener?.('change',()=>tiles.setUrl(tileUrl()));
+L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'}).addTo(map);
 
 const markers={};
 function pinIcon(c,sel){
@@ -234,7 +234,8 @@ function statusHTML(c){
 function renderList(){
   let rows=filtered();
   if(me){rows.forEach(c=>c.d=dist(me,c));rows.sort((a,b)=>a.d-b.d);}
-  else rows.sort((a,b)=>(a.area>b.area?1:-1)||a.name.localeCompare(b.name,undefined,{numeric:true}));
+  else{const key=n=>n.replace(/^(Unit|[\d\/-]+)\s+/,'');const num=n=>parseInt(n)||0;
+    rows.sort((a,b)=>a.area.localeCompare(b.area)||key(a.name).localeCompare(key(b.name))||num(a.name)-num(b.name));}
   $('#title').textContent=me?'Closest to you':'All corrals';
   $('#count').textContent=`${rows.length} of ${C.length}`;
   $('#list').innerHTML=rows.length?rows.map(c=>`<button class="row" data-id="${c.id}">
