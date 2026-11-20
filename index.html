@@ -48,7 +48,7 @@ button{font:inherit;color:inherit}
 .fab.on{background:var(--amber);color:var(--amber-ink)}
 
 /* pins */
-.pin{width:30px;height:30px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);background:var(--pin);border:2px solid var(--card);display:grid;place-items:center;box-shadow:0 3px 8px rgba(0,0,0,.3);transition:transform .15s}
+.pin{width:28px;height:28px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);background:var(--pin);border:2px solid var(--card);display:grid;place-items:center;box-shadow:0 3px 8px rgba(0,0,0,.3);transition:transform .15s}
 .pin b{transform:rotate(45deg);font-size:12px;font-weight:800;color:var(--card)}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .pin b{color:#15171A}}
 .pin.closed{opacity:.55}
@@ -206,13 +206,13 @@ L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribu
 const markers={};
 function pinIcon(c,sel){
   const open=inHours(c.h);
-  return L.divIcon({className:'',iconSize:[30,30],iconAnchor:[15,30],html:`<div class="pin${open===false?' closed':''}${sel?' sel':''}"><b>P</b></div>`});
+  return L.divIcon({className:'',iconSize:[28,28],iconAnchor:[14,28],html:`<div class="pin${open===false?' closed':''}${sel?' sel':''}"><b>P</b></div>`});
 }
 C.forEach(c=>{
   markers[c.id]=L.marker([c.lat,c.lon],{icon:pinIcon(c),title:c.name,keyboard:true}).addTo(map).on('click',()=>openDetail(c.id,true));
 });
-map.fitBounds(L.latLngBounds(C.filter(c=>c.area==='Center City').map(c=>[c.lat,c.lon])),{paddingTopLeft:[20,80],paddingBottomRight:[20,innerWidth>=860?20:innerHeight*.46]});
-if(innerWidth>=860) map.panBy([-200,0],{animate:false});
+if(innerWidth>=860){map.fitBounds(L.latLngBounds(C.filter(c=>c.area==='Center City').map(c=>[c.lat,c.lon])),{paddingTopLeft:[440,80],paddingBottomRight:[30,30]});}
+else{map.setView([39.9505,-75.1575],15,{animate:false});map.panBy([0,Math.round(innerHeight*.2)],{animate:false});}
 
 /* ---- distance ---- */
 let me=null, meMarker=null;
