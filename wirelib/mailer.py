@@ -59,7 +59,60 @@ def setting(name: str, fallback: str = "") -> str:
     return (os.environ.get(name) or "").strip() or fallback
 
 
+DEFAULT_SITE = "https://joshua-albert.github.io/Wire/"
+
+
+def push(threads: list[dict], cfg: dict, site_url: str, kicker: str) -> bool:
+    """
+    Phone notification through ntfy.sh. No account, no password: the phone
+    app subscribes to the topic in config.yaml (or the NTFY_TOPIC secret).
+    """
+    conf = cfg.get("push") or {}
+    topic = setting("NTFY_TOPIC", str(conf.get("ntfy_topic") or ""))
+    if not conf.get("enabled", True) or not topic:
+        print("push: not configured — skipping")
+        return False
+    picked = sorted(threads, key=lambda t: t["_score"], reverse=True)
+    if not picked:
+        return False
+    site = site_url if site_url.startswith("http") else DEFAULT_SITE
+    top = picked[0]
+    lines = [f"• {t['title'][:140]} ({_why(t).split(':')[0]}, {t['source']})"
+             for t in picked[: conf.get("max_items", 5)]]
+    if len(picked) > len(lines):
+        lines.append(f"+ {len(picked) - len(lines)} more on The Wire")
+    breaking = kicker == "breaking"
+    title = (f"Breaking: {top['title']}" if breaking else f"The Wire: {kicker}")[:180]
+    page = f"{site.rstrip('/')}/t/{top['id']}.html"
+    try:
+        import requests
+        response = requests.post(
+            f"{conf.get('server', 'https://ntfy.sh').rstrip('/')}/{topic}",
+            data="\n".join(lines).encode("utf-8"),
+            headers={
+                "Title": title.encode("utf-8"),
+                "Priority": "high" if breaking else "default",
+                "Tags": "rotating_light" if breaking else "newspaper",
+                "Click": page,
+                "Actions": f"view, Open The Wire, {site}",
+            },
+            timeout=20,
+        )
+        response.raise_for_status()
+    except Exception as exc:  # noqa: BLE001 — a push must never kill the run
+        print(f"push: send failed — {type(exc).__name__}: {exc}")
+        return False
+    print(f"push: sent {len(picked)} stories ({kicker})")
+    return True
+
+
 def send(threads: list[dict], cfg: dict, site_url: str, kicker: str) -> bool:
+    pushed = push(threads, cfg, site_url, kicker)
+    mailed = send_email(threads, cfg, site_url, kicker)
+    return pushed or mailed
+
+
+def send_email(threads: list[dict], cfg: dict, site_url: str, kicker: str) -> bool:
     host = setting("SMTP_HOST")
     user = setting("SMTP_USER")
     password = setting("SMTP_PASS")

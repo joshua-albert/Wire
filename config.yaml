@@ -130,6 +130,11 @@ beats:
 siren:
   score: 34
   min_sources: 4
+push:
+  # Phone alerts through the free ntfy app. Subscribe to this topic in the app.
+  enabled: true
+  ntfy_topic: wire-ja-ozzhkthxms5rc4
+  max_items: 5
 email:
   enabled: true
   batch_size: 6
